@@ -1,0 +1,12 @@
+# Custom routing untuk reset password
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Route khusus untuk reset password
+    RewriteRule ^auth_login/reset_password_siswa/(.+)$ index.php?/$1 [L,QSA]
+    
+    # Route default CodeIgniter
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([\s\S]*)$ index.php/$1 [L,NC,QSA]
+</IfModule>
