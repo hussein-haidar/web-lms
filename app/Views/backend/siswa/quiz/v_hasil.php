@@ -1,205 +1,95 @@
 <?= $this->extend('frontend/template_web/main') ?>
 <?= $this->section('content') ?>
 
+<script>
+function toggleDetail(id) {
+    const detailRow = document.getElementById('detail-' + id);
+    if (detailRow) {
+        const currentDisplay = window.getComputedStyle(detailRow).display;
+        if (currentDisplay === 'none' || currentDisplay === '') {
+            detailRow.style.display = 'table-row';
+        } else {
+            detailRow.style.display = 'none';
+        }
+    }
+}
+</script>
+
 <div class="container-fluid py-4">
-    <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h2 class="h3 mb-1">
-                        <i class="fas fa-chart-line text-primary me-2"></i>
-                        <?= esc($title) ?>
-                    </h2>
-                    <p class="text-muted mb-0">Riwayat hasil quiz Anda</p>
-                </div>
-                <div>
-                    <a href="<?= base_url('home_siswa/quiz/' . ($quiz['id_kursus'] ?? '')) ?>" class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-left me-2"></i>Kembali ke Quiz
-                    </a>
-                </div>
-            </div>
+            <h2 class="h3 mb-1">
+                <i class="fas fa-chart-line text-primary me-2"></i>
+                <?= esc($title) ?>
+            </h2>
+            <p class="text-muted mb-0">Riwayat hasil quiz Anda</p>
         </div>
     </div>
 
-    <!-- Flash Message -->
-    <?php if (session()->getFlashdata('pesan')): ?>
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-success alert-dismissible border-0 shadow-sm fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <?= session()->getFlashdata('pesan') ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <?php if (!empty($results) && is_array($results)): ?>
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card border-0 bg-primary text-white shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="card-title mb-1">Total Attempt</h6>
-                                <h3 class="mb-0"><?= count($results) ?></h3>
-                            </div>
-                            <div class="ms-3">
-                                <i class="fas fa-redo fa-2x opacity-75"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 bg-success text-white shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="card-title mb-1">Tertinggi</h6>
-                                <h3 class="mb-0"><?= max(array_column($results, 'total_nilai')) ?></h3>
-                            </div>
-                            <div class="ms-3">
-                                <i class="fas fa-trophy fa-2x opacity-75"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 bg-info text-white shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="card-title mb-1">Rata-rata</h6>
-                                <h3 class="mb-0"><?= round(array_sum(array_column($results, 'total_nilai')) / count($results)) ?></h3>
-                            </div>
-                            <div class="ms-3">
-                                <i class="fas fa-chart-bar fa-2x opacity-75"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-0 bg-warning text-white shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="card-title mb-1">Status</h6>
-                                <h3 class="mb-0">
-                                    <?php $lulus_count = count(array_filter($results, fn($r) => $r['is_lulus'])); ?>
-                                    <?= $lulus_count > 0 ? 'LULUS' : 'COBA' ?>
-                                </h3>
-                            </div>
-                            <div class="ms-3">
-                                <i class="fas fa-<?= $lulus_count > 0 ? 'check-circle' : 'exclamation-triangle' ?> fa-2x opacity-75"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Table -->
         <div class="row">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-list me-2"></i>
-                            Detail Hasil Quiz
-                        </h5>
-                    </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="text-center" style="width: 50px;">No</th>
-                                        <th class="text-center" style="width: 80px;">Attempt</th>
-                                        <th class="text-center" style="width: 100px;">Nilai</th>
-                                        <th class="text-center" style="width: 80px;">Benar</th>
-                                        <th class="text-center" style="width: 80px;">Salah</th>
-                                        <th class="text-center" style="width: 80px;">Total Soal</th>
-                                        <th class="text-center" style="width: 100px;">Status</th>
-                                        <th style="width: 150px;">Waktu Mulai</th>
-                                        <th style="width: 150px;">Waktu Selesai</th>
-                                        <th class="text-center" style="width: 100px;">Aksi</th>
+                                        <th>No</th>
+                                        <th>Attempt</th>
+                                        <th>Nilai</th>
+                                        <th>Benar</th>
+                                        <th>Salah</th>
+                                        <th>Status</th>
+                                        <th>Waktu</th>
+                                        <th>Aksi</th>
+                                        <th>Detail</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php $no = 1;
-                                    foreach ($results as $r): ?>
+                                    <?php $no = 1; foreach ($results as $r): ?>
                                         <tr>
-                                            <td class="text-center">
-                                                <span class="badge bg-secondary rounded-pill"><?= $no++ ?></span>
+                                            <td><?= $no++ ?></td>
+                                            <td>
+                                                <span class="badge bg-info"><?= esc($r['attempt_ke']) ?></span>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-info rounded-pill"><?= esc($r['attempt_ke']) ?></span>
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="progress" style="height: 25px;">
-                                                    <div class="progress-bar <?= $r['total_nilai'] >= 70 ? 'bg-success' : ($r['total_nilai'] >= 50 ? 'bg-warning' : 'bg-danger') ?>" 
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar <?= $r['total_nilai'] >= 70 ? 'bg-success' : 'bg-danger' ?>" 
                                                          style="width: <?= $r['total_nilai'] ?>%">
-                                                        <?= esc($r['total_nilai']) ?>
+                                                        <?= esc($r['total_nilai']) ?>%
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="text-success fw-bold"><?= esc($r['total_benar']) ?></span>
+                                            <td>
+                                                <span class="text-success"><?= esc($r['total_benar']) ?></span>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="text-danger fw-bold"><?= esc($r['total_salah']) ?></span>
+                                            <td>
+                                                <span class="text-danger"><?= esc($r['total_salah']) ?></span>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-primary rounded-pill"><?= esc($r['total_soal']) ?></span>
-                                            </td>
-                                            <td class="text-center">
+                                            <td>
                                                 <?php if ($r['is_lulus']): ?>
-                                                    <span class="badge bg-success rounded-pill">
-                                                        <i class="fas fa-check me-1"></i>LULUS
-                                                    </span>
+                                                    <span class="badge bg-success">LULUS</span>
                                                 <?php else: ?>
-                                                    <span class="badge bg-secondary rounded-pill">
-                                                        <i class="fas fa-times me-1"></i>COBA
-                                                    </span>
+                                                    <span class="badge bg-secondary">COBA</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <?php 
-                                                $waktu_mulai = $r['waktu_mulai'];
-                                                if (empty($waktu_mulai) || 
-                                                    $waktu_mulai === '0000-00-00 00:00:00' || 
-                                                    strpos($waktu_mulai, '0000-00-00') === 0) {
-                                                    echo '<span class="text-muted"><i class="fas fa-minus-circle"></i> Belum dimulai</span>';
-                                                } else {
-                                                    echo '<small class="text-muted"><i class="fas fa-clock me-1"></i>' . date('d/m/Y H:i', strtotime($waktu_mulai)) . '</small>';
-                                                }
-                                                ?>
+                                                <small class="text-muted">
+                                                    <?= date('d/m H:i', strtotime($r['waktu_mulai'])) ?>
+                                                </small>
                                             </td>
                                             <td>
-                                                <?php 
-                                                $waktu_selesai = $r['waktu_selesai'];
-                                                if (empty($waktu_selesai) || $waktu_selesai === '0000-00-00 00:00:00') {
-                                                    echo '<span class="text-muted"><i class="fas fa-minus-circle"></i> Belum selesai</span>';
-                                                } else {
-                                                    echo '<small class="text-muted"><i class="fas fa-clock me-1"></i>' . date('d/m/Y H:i', strtotime($waktu_selesai)) . '</small>';
-                                                }
-                                                ?>
-                                            </td>
-                                            <td class="text-center">
                                                 <?php 
                                                 // Check if student has passed with 70-100 score
                                                 $bestResult = $quizHasilModel->getNilaiTerbaik($quiz['id_quiz'], $pendaftaran['id_pendaftaran']);
                                                 $hasPassedWithHighScore = $bestResult && $bestResult['total_nilai'] >= 70 && $bestResult['is_lulus'] == 1;
                                                 $hasExceededAttempts = $r['attempt_ke'] >= 3;
                                                 
-                                                if (!$r['is_lulus'] && $r['attempt_ke'] < ($quiz['max_attempt'] ?? 0) && !$hasPassedWithHighScore && !$hasExceededAttempts): ?>
+                                                if (!$r['is_lulus'] && $r['attempt_ke'] < ($quiz['max_attempt'] ?? 3) && !$hasPassedWithHighScore && !$hasExceededAttempts): ?>
                                                     <form method="post" action="<?= base_url('home_siswa/quiz/retry/' . $quiz['id_quiz']) ?>" style="display:inline">
-                                                        <button type="submit" class="btn btn-sm btn-warning rounded-pill">
+                                                        <?= csrf_field() ?>
+                                                        <button type="submit" class="btn btn-sm btn-warning">
                                                             <i class="fas fa-redo me-1"></i>Retry
                                                         </button>
                                                     </form>
@@ -217,6 +107,106 @@
                                                     </span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info" onclick="toggleDetail(<?= $r['id_quiz_hasil'] ?>)">
+                                                    <i class="fas fa-eye"></i> Lihat
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr id="detail-<?= $r['id_quiz_hasil'] ?>" style="display: none;" class="bg-light">
+                                            <td colspan="9" class="p-4">
+                                                <h6 class="mb-3">
+                                                    <i class="fas fa-list-check me-2"></i>
+                                                    Detail Jawaban - Attempt <?= $r['attempt_ke'] ?>
+                                                </h6>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h6 class="text-primary">Jawaban Anda:</h6>
+                                                        <div class="bg-white p-3 rounded border">
+                                                            <?php 
+                                                            $jawaban_user = json_decode($r['jawaban_json'], true);
+                                                            if (is_array($jawaban_user)) {
+                                                                foreach ($jawaban_user as $soal_id => $jawaban) {
+                                                                    echo '<div class="mb-2">';
+                                                                    echo '<strong>Soal ' . ($soal_id + 1) . ':</strong> ';
+                                                                    
+                                                                    // Konversi ke huruf yang benar (A-D)
+                                                                    $jawaban_display = '';
+                                                                    
+                                                                    if (is_array($jawaban)) {
+                                                                        // Cek apakah ini object dengan key 'jawaban'
+                                                                        if (isset($jawaban['jawaban'])) {
+                                                                            $jawaban_value = $jawaban['jawaban'];
+                                                                            if (is_numeric($jawaban_value)) {
+                                                                                $jawaban_index = (int)$jawaban_value;
+                                                                                // Batasi hanya 0-3 (A-D)
+                                                                                if ($jawaban_index >= 0 && $jawaban_index <= 3) {
+                                                                                    $jawaban_display = chr(65 + $jawaban_index);
+                                                                                } else {
+                                                                                    $jawaban_display = '?';
+                                                                                }
+                                                                            } else {
+                                                                                $jawaban_display = (string) $jawaban_value;
+                                                                            }
+                                                                        } else {
+                                                                            // Jika array biasa, ambil nilai pertama
+                                                                            $first_value = reset($jawaban);
+                                                                            if (is_numeric($first_value)) {
+                                                                                $jawaban_index = (int)$first_value;
+                                                                                // Batasi hanya 0-3 (A-D)
+                                                                                if ($jawaban_index >= 0 && $jawaban_index <= 3) {
+                                                                                    $jawaban_display = chr(65 + $jawaban_index);
+                                                                                } else {
+                                                                                    $jawaban_display = '?';
+                                                                                }
+                                                                            } else {
+                                                                                $jawaban_display = (string) $first_value;
+                                                                            }
+                                                                        }
+                                                                    } elseif (is_numeric($jawaban)) {
+                                                                        $jawaban_index = (int)$jawaban;
+                                                                        // Batasi hanya 0-3 (A-D)
+                                                                        if ($jawaban_index >= 0 && $jawaban_index <= 3) {
+                                                                            $jawaban_display = chr(65 + $jawaban_index);
+                                                                        } else {
+                                                                            $jawaban_display = '?';
+                                                                        }
+                                                                    } else {
+                                                                        $jawaban_display = (string) $jawaban;
+                                                                    }
+                                                                    
+                                                                    echo '<span class="badge bg-info">' . esc($jawaban_display) . '</span>';
+                                                                    echo '</div>';
+                                                                }
+                                                            } else {
+                                                                echo '<span class="text-muted">Tidak ada jawaban</span>';
+                                                            }
+                                                            ?>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6 class="text-success">Jawaban Benar:</h6>
+                                                        <div class="bg-white p-3 rounded border">
+                                                            <?php 
+                                                            $quiz_details = $quizModel->find($quiz['id_quiz']);
+                                                            if ($quiz_details && !empty($quiz_details['soal_json'])) {
+                                                                $quiz_data = json_decode($quiz_details['soal_json'], true);
+                                                                if (is_array($quiz_data)) {
+                                                                    foreach ($quiz_data as $index => $soal) {
+                                                                        $jawaban_benar = $soal['jawaban_benar'] ?? '';
+                                                                        echo '<div class="mb-2">';
+                                                                        echo '<strong>Soal ' . ($index + 1) . ':</strong> ';
+                                                                        echo '<span class="badge bg-success">' . esc($jawaban_benar) . '</span>';
+                                                                        echo '</div>';
+                                                                    }
+                                                                }
+                                                            }
+                                                            ?>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -227,22 +217,8 @@
             </div>
         </div>
     <?php else: ?>
-        <!-- Empty State -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <div class="mb-4">
-                            <i class="fas fa-clipboard-list fa-4x text-muted opacity-50"></i>
-                        </div>
-                        <h4 class="text-muted mb-3">Belum Ada Hasil Quiz</h4>
-                        <p class="text-muted mb-4">Anda belum mengerjakan quiz apapun. Mulai quiz pertama Anda untuk melihat hasil di sini.</p>
-                        <a href="<?= base_url('home_siswa/quiz/' . ($quiz['id_kursus'] ?? '')) ?>" class="btn btn-primary rounded-pill">
-                            <i class="fas fa-play me-2"></i>Mulai Quiz
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <div class="text-center py-5">
+            <h4 class="text-muted">Belum Ada Hasil Quiz</h4>
         </div>
     <?php endif; ?>
 </div>

@@ -91,7 +91,7 @@
                         <div class="mt-2">
                             <?php if (!empty($slider['gambar_slider'])): ?>
                                 <img id="current-image"
-                                    src="<?= base_url('public/gambar_slider/' . $slider['gambar_slider']) ?>"
+                                    src="<?= base_url('uploads/slider_web/' . $slider['gambar_slider']) ?>"
                                     alt="Current Image"
                                     class="img-thumbnail"
                                     style="max-width: 100%; height: auto; max-height: 300px; display: block;"

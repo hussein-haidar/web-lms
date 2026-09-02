@@ -44,6 +44,7 @@
 
                         <!-- Form -->
                         <form method="post" action="<?= base_url('auth_login/proses_lupa_password_siswa'); ?>">
+                            <?= csrf_field() ?>
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address</label>
                                 <div class="input-group">

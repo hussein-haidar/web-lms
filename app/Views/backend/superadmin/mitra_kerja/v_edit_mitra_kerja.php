@@ -74,7 +74,7 @@
                             <?php if (!empty($mitra['logo_mitra'])): ?>
                                 <div class="mt-2">
                                     <small>Logo saat ini:</small><br>
-                                    <img src="<?= base_url('slider/' . $mitra['logo_mitra']) ?>" 
+                                    <img src="<?= base_url('uploads/mitra_kerja/' . $mitra['logo_mitra']) ?>" 
                                          alt="Current Logo" style="max-width: 100px; max-height: 100px; border-radius: 5px;">
                                 </div>
                             <?php endif; ?>

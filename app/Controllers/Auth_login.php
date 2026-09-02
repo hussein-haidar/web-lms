@@ -15,12 +15,72 @@ class Auth_login extends BaseController
     protected $M_siswa;
     protected $M_pendaftaran;
 
+    // Rate limiting config
+    protected int $maxAttempts = 5;
+    protected int $lockoutTime = 900; // 15 minutes in seconds
+
     public function __construct()
     {
         $this->M_superadmin = new M_superadmin();
         $this->M_karyawan  = new M_karyawan();
         $this->M_siswa = new M_siswa();
         $this->M_pendaftaran = new M_pendaftaran();
+    }
+
+    // ============================================
+    // RATE LIMITING METHODS
+    // ============================================
+
+    private function getRateLimitKey(string $identifier, string $type): string
+    {
+        return 'rate_limit_' . $type . '_' . md5($identifier);
+    }
+
+    private function checkRateLimit(string $identifier, string $type): ?string
+    {
+        $key = $this->getRateLimitKey($identifier, $type);
+        $data = session()->get($key);
+
+        if (!$data) {
+            return null; // No lockout
+        }
+
+        $attempts = $data['attempts'] ?? 0;
+        $lockedAt = $data['locked_at'] ?? 0;
+
+        // Check if lockout period has expired
+        if ($lockedAt > 0 && (time() - $lockedAt) > $this->lockoutTime) {
+            session()->remove($key);
+            return null;
+        }
+
+        if ($attempts >= $this->maxAttempts) {
+            $remaining = $this->lockoutTime - (time() - $lockedAt);
+            $minutes = ceil($remaining / 60);
+            return "Terlalu banyak percobaan gagal. Coba lagi dalam {$minutes} menit.";
+        }
+
+        return null;
+    }
+
+    private function recordFailedAttempt(string $identifier, string $type): void
+    {
+        $key = $this->getRateLimitKey($identifier, $type);
+        $data = session()->get($key) ?? ['attempts' => 0, 'locked_at' => 0];
+
+        $data['attempts']++;
+
+        if ($data['attempts'] >= $this->maxAttempts && $data['locked_at'] === 0) {
+            $data['locked_at'] = time();
+        }
+
+        session()->set($key, $data);
+    }
+
+    private function clearFailedAttempts(string $identifier, string $type): void
+    {
+        $key = $this->getRateLimitKey($identifier, $type);
+        session()->remove($key);
     }
 
     public function login_superadmin()
@@ -34,11 +94,15 @@ class Auth_login extends BaseController
 
     public function cek_login_superadmin()
     {
-        // Debug: Log input
-        log_message('debug', 'SUPERADMIN LOGIN ATTEMPT');
-        log_message('debug', 'Input: ' . $this->request->getPost('login_superadmin'));
-        log_message('debug', 'Password length: ' . strlen($this->request->getPost('kata_sandi')));
+        $input = $this->request->getPost('login_superadmin') ?? '';
         
+        // Check rate limit
+        $rateLimitMsg = $this->checkRateLimit($input, 'superadmin');
+        if ($rateLimitMsg) {
+            session()->setFlashdata('pesan_warning', $rateLimitMsg);
+            return redirect()->to(base_url('auth_login/login_superadmin'));
+        }
+
         if ($this->validate([
             'login_superadmin' => [
                 'label' => 'Username atau Email',
@@ -55,15 +119,15 @@ class Auth_login extends BaseController
                 ]
             ],
         ])) {
-            $input = $this->request->getPost('login_superadmin'); // Bisa NIP atau email
             $password = $this->request->getPost('kata_sandi');
 
             // Cari user berdasarkan NIP atau email
             $user = $this->M_superadmin->findByEmailOrUsername($input);
             
                        if ($user) {
-                // Verifikasi password (pastikan disimpan dalam bentuk plain text atau sesuaikan jika pakai hash)
+                // Verifikasi password
                 if ($user['kata_sandi'] === $password) {
+                    $this->clearFailedAttempts($input, 'superadmin');
                     $userData = [
                         'id_superadmin' => $user['id_superadmin'],
                         'id_pemilik' => $user['id_pemilik'],
@@ -93,10 +157,12 @@ class Auth_login extends BaseController
                             return redirect()->to(base_url('auth_login/login_superadmin'));
                     }
                 } else {
+                    $this->recordFailedAttempt($input, 'superadmin');
                     session()->setFlashdata('pesan_warning', 'Login Gagal, Password Salah!');
                     return redirect()->to(base_url('auth_login/login_superadmin'));
                 }
             } else {
+                $this->recordFailedAttempt($input, 'superadmin');
                 session()->setFlashdata('pesan_warning', 'Login Gagal, Username atau Email Tidak Ditemukan!');
                 return redirect()->to(base_url('auth_login/login_superadmin'));
             }
@@ -217,6 +283,15 @@ class Auth_login extends BaseController
 
     public function cek_login_karyawan()
     {
+        $input = $this->request->getPost('login_karyawan') ?? '';
+
+        // Check rate limit
+        $rateLimitMsg = $this->checkRateLimit($input, 'karyawan');
+        if ($rateLimitMsg) {
+            session()->setFlashdata('pesan_warning', $rateLimitMsg);
+            return redirect()->to(base_url('auth_login/login_karyawan'));
+        }
+
         // Validasi input
         if ($this->validate([
             'login_karyawan' => [
@@ -234,13 +309,13 @@ class Auth_login extends BaseController
                 ]
             ],
         ])) {
-            $input = $this->request->getPost('login_karyawan');
             $password = $this->request->getPost('kata_sandi');
 
             $user = $this->M_karyawan->findByNipOrEmail($input);
 
             if ($user) {
                 if ($password === $user['kata_sandi']) {
+                    $this->clearFailedAttempts($input, 'karyawan');
                     $userData = [
                         'log' => true,
                         'id_karyawan' => $user['id_karyawan'],
@@ -275,10 +350,12 @@ class Auth_login extends BaseController
                             return redirect()->to(base_url('auth_login/login_karyawan')); // Atau home_website
                     }
                 } else {
+                    $this->recordFailedAttempt($input, 'karyawan');
                     session()->setFlashdata('pesan_warning', 'Login Gagal, Password Salah!');
                     return redirect()->to(base_url('auth_login/login_karyawan'));
                 }
             } else {
+                $this->recordFailedAttempt($input, 'karyawan');
                 session()->setFlashdata('pesan_warning', 'Login Gagal, NIP atau Email Tidak Ditemukan!');
                 return redirect()->to(base_url('auth_login/login_karyawan'));
             }
@@ -404,6 +481,15 @@ class Auth_login extends BaseController
 
     public function cek_login_siswa()
     {
+        $input = $this->request->getPost('login_siswa') ?? '';
+
+        // Check rate limit
+        $rateLimitMsg = $this->checkRateLimit($input, 'siswa');
+        if ($rateLimitMsg) {
+            session()->setFlashdata('pesan_warning', $rateLimitMsg);
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
         if ($this->validate([
             'login_siswa' => [
                 'label' => 'NIS atau Email',
@@ -420,7 +506,6 @@ class Auth_login extends BaseController
                 ]
             ],
         ])) {
-            $input = $this->request->getPost('login_siswa');
             $password = $this->request->getPost('kata_sandi');
 
             // Cari user berdasarkan NIS atau email
@@ -428,7 +513,8 @@ class Auth_login extends BaseController
 
             if ($user) {
                 // ✅ VERIFIKASI PASSWORD LANGSUNG (TANPA password_verify)
-                if ($password === $user['kata_sandi']) {  // Perbandingan langsung
+                if ($password === $user['kata_sandi']) {
+                    $this->clearFailedAttempts($input, 'siswa');
                     $userData = [
                         'id_siswa' => $user['id_siswa'],
                         'id_pemilik' => $user['id_pemilik'],
@@ -454,10 +540,12 @@ class Auth_login extends BaseController
                     // Redirect ke dashboard siswa
                     return redirect()->to(base_url('home_siswa/index'));
                 } else {
+                    $this->recordFailedAttempt($input, 'siswa');
                     session()->setFlashdata('pesan_warning', 'Login Gagal, Password Salah!');
                     return redirect()->to(base_url('auth_login/login_siswa'));
                 }
             } else {
+                $this->recordFailedAttempt($input, 'siswa');
                 session()->setFlashdata('pesan_warning', 'Login Gagal, NIS atau Email Tidak Ditemukan!');
                 return redirect()->to(base_url('auth_login/login_siswa'));
             }

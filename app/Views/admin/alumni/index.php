@@ -8,7 +8,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Daftar Alumni</h3>
                     <div class="card-tools">
-                        <a href="<?= base_url('/alumni/create') ?>" class="btn btn-primary btn-sm">
+                        <a href="<?= base_url('/home_superadmin/alumni/create') ?>" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus"></i> Tambah Alumni
                         </a>
                     </div>
@@ -74,7 +74,7 @@
                                                     <a href="<?= base_url('/alumni') ?>" class="btn btn-sm btn-info" target="_blank" title="Lihat di Frontend">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="<?= base_url('/alumni/edit/' . $item['id']) ?>" class="btn btn-sm btn-warning" title="Edit">
+                                                    <a href="<?= base_url('/home_superadmin/alumni/edit/' . $item['id']) ?>" class="btn btn-sm btn-warning" title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <button type="button" class="btn btn-sm btn-danger" 
@@ -107,7 +107,7 @@
 <script>
 function confirmDelete(id, nama) {
     if (confirm('Apakah Anda yakin ingin menghapus alumni "' + nama + '"?')) {
-        window.location.href = '<?= base_url('/alumni/delete/') ?>' + id;
+        window.location.href = '<?= base_url('/home_superadmin/alumni/delete/') ?>' + id;
     }
 }
 </script>

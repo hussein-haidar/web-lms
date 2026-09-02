@@ -36,4 +36,15 @@ class M_progres_materi extends Model
             return $this->insert($data);
         }
     }
+
+    // ✅ UPDATE PROGRESS MATERI
+    public function updateProgress($id_pendaftaran, $id_materi, $is_completed)
+    {
+        $data = [
+            'is_completed' => $is_completed,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        
+        return $this->updateProgres($id_pendaftaran, $id_materi, $data);
+    }
 }

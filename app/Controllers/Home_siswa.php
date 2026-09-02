@@ -13,13 +13,15 @@ use App\Models\M_quiz_hasil;
 use App\Models\M_sertifikat;
 use App\Models\M_diskusi;
 use App\Models\M_keranjang;
-use App\Models\M_slider;
+use App\Models\M_slider_promo;
 use App\Models\M_paket;
 use App\Models\M_modul;
 use App\Models\M_materi;
 use App\Models\M_progres_materi;
 use App\Models\M_pembayaran;
 use App\Models\M_review;
+use App\Models\M_alumni;
+use App\Models\M_saran;
 
 class Home_siswa extends BaseController
 {
@@ -33,13 +35,15 @@ class Home_siswa extends BaseController
     protected $M_sertifikat;
     protected $M_diskusi;
     protected $M_keranjang;
-    protected $M_slider;
+    protected $M_slider_promo;
     protected $M_paket;
     protected $M_modul;
     protected $M_materi;
     protected $M_progres_materi;
     protected $M_review;
     protected $M_pembayaran;
+    protected $M_alumni;
+    protected $M_saran;
     protected $db;
 
     public function __construct()
@@ -56,13 +60,15 @@ class Home_siswa extends BaseController
         $this->M_sertifikat = new M_sertifikat();
         $this->M_diskusi = new M_diskusi();
         $this->M_keranjang = new M_keranjang();
-        $this->M_slider = new M_slider();
+        $this->M_slider_promo = new M_slider_promo();
         $this->M_paket = new M_paket();
         $this->M_modul = new M_modul();
         $this->M_materi = new M_materi();
         $this->M_progres_materi = new M_progres_materi();
         $this->M_review = new M_review();
         $this->M_pembayaran = new M_pembayaran();
+        $this->M_alumni = new M_alumni();
+        $this->M_saran = new M_saran();
         $this->db = \Config\Database::connect();
     }
 
@@ -81,7 +87,7 @@ class Home_siswa extends BaseController
         $this->M_pembayaran->cleanupExpired();
 
         $profil = $this->M_siswa->get_profil($id_siswa);
-        $sliders = $this->M_slider->getActiveSliders();
+        $sliders = $this->M_slider_promo->getActiveSliders();
         $enrolled = $this->M_pendaftaran->getEnrolledCoursesForDashboard($id_siswa);
         $recommendations = $this->M_kursus->getRecommendationsForDashboard($id_siswa);
 
@@ -92,21 +98,7 @@ class Home_siswa extends BaseController
             $reviewed_ids[] = $rv['id_pendaftaran'];
         }
 
-        // ✅ Process sliders to ensure proper image paths
-        foreach ($sliders as &$slider) {
-            if (!empty($slider['gambar_slider'])) {
-                // Check if file exists in public/slider folder
-                $imagePath = FCPATH . 'slider/' . $slider['gambar_slider'];
-                if (!file_exists($imagePath)) {
-                    // If file doesn't exist, use default image
-                    $slider['gambar_slider'] = M_slider::DEFAULT_IMAGE;
-                }
-            } else {
-                // If no image, use default
-                $slider['gambar_slider'] = M_slider::DEFAULT_IMAGE;
-            }
-        }
-
+    
         $data = [
             'title' => 'LPK INASADA',
             'title2' => 'Dashboard Siswa',
@@ -226,6 +218,23 @@ class Home_siswa extends BaseController
         }
     }
 
+    // ✅ Kirim Notifikasi ke Admin
+    private function kirimNotifikasiKeAdmin($data_pembayaran, $siswa)
+    {
+        // Logic untuk mengirim notifikasi ke admin
+        // Bisa ditambahkan ke tabel notifikasi atau kirim email
+        log_message('info', 'Pembayaran baru: ' . $data_pembayaran['kode_invoice'] . ' oleh ' . $siswa['nama_lengkap']);
+        return true;
+    }
+
+    // ✅ Kirim Notifikasi Bukti Bayar
+    private function kirimNotifikasiBuktiBayar($id_pembayaran, $pembayaran, $fileName)
+    {
+        // Logic untuk mengirim notifikasi bukti bayar ke admin
+        log_message('info', 'Bukti bayar diunggah: ' . $fileName . ' untuk pembayaran ID: ' . $id_pembayaran);
+        return true;
+    }
+
     public function checkout_noncart()
     {
         $id_siswa = session()->get('id_siswa');
@@ -241,7 +250,7 @@ class Home_siswa extends BaseController
         $harga_kursus = $this->request->getPost('harga_kursus');
 
         if (!$id_kursus) {
-            return redirect()->to(base_url('home_siswa/v_kursus'));
+            return redirect()->to(base_url('home_siswa/kursus_saya'));
         }
 
         $kursus = $this->M_kursus->find($id_kursus);
@@ -728,6 +737,45 @@ class Home_siswa extends BaseController
         return redirect()->to(base_url('home_siswa/status_bayar'))->with('success', 'Bukti pembayaran berhasil dikirim! Silakan tunggu verifikasi admin.');
     }
 
+    /**
+     * AJAX: Check payment status real-time (auto-polling dari frontend)
+     */
+    public function check_payment_status()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['has_updates' => false]);
+        }
+
+        $last_check = session()->get('last_payment_status_check') ?? date('Y-m-d H:i:s', strtotime('-5 minutes'));
+        session()->set('last_payment_status_check', date('Y-m-d H:i:s'));
+
+        $updated = $this->M_pembayaran
+            ->select('pembayaran.kode_invoice, pembayaran.status_pembayaran, pembayaran.tanggal_konfirmasi, pembayaran.alasan_penolakan')
+            ->join('pendaftaran', 'pendaftaran.kode_invoice = pembayaran.kode_invoice', 'left')
+            ->where('pendaftaran.id_siswa', $id_siswa)
+            ->where('pembayaran.updated_at >', $last_check)
+            ->whereIn('pembayaran.status_pembayaran', ['success', 'failed'])
+            ->groupBy('pembayaran.kode_invoice')
+            ->orderBy('pembayaran.updated_at', 'DESC')
+            ->findAll();
+
+        return $this->response->setJSON([
+            'has_updates' => count($updated) > 0,
+            'status_data' => $updated,
+            'checked_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * AJAX: Reset payment tracking session
+     */
+    public function reset_payment_tracking()
+    {
+        session()->set('last_payment_status_check', date('Y-m-d H:i:s', strtotime('-5 minutes')));
+        return $this->response->setJSON(['status' => 'ok', 'message' => 'Tracking reset']);
+    }
+
     public function riwayat_beli()
     {
         $id_siswa = session()->get('id_siswa');
@@ -796,69 +844,13 @@ class Home_siswa extends BaseController
         return view('frontend/web/store/v_detail', $data);
     }
 
-    public function v_kursus()
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) {
-            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
-            return redirect()->to(base_url('auth_login/login_siswa'));
-        }
-
-        // Auto-fix: Update registration status for courses with successful payments
-        // This ensures consistency between payment and registration status
-        $success_invoices = $this->db->table('pembayaran')
-            ->select('kode_invoice')
-            ->where('status_pembayaran', 'success')
-            ->get()
-            ->getResultArray();
-        
-        $invoice_codes = array_column($success_invoices, 'kode_invoice');
-        
-        if (!empty($invoice_codes)) {
-            $this->db->table('pendaftaran')
-                ->where('id_siswa', $id_siswa)
-                ->whereIn('kode_invoice', $invoice_codes)
-                ->whereIn('status', ['pending', 'diverifikasi'])
-                ->update([
-                    'status' => 'aktif',
-                    'tanggal_aktif' => date('Y-m-d H:i:s')
-                ]);
-        }
-
-        // Get enrolled courses with successful payments
-        // Show courses regardless of registration status if payment is successful
-        $kursus = $this->db->table('pendaftaran')
-            ->select('pendaftaran.*, kursus.nama_kursus, kursus.slug, kursus.gambar_utama, detail_kursus.gambar_detail_a, kursus.deskripsi_singkat, paket_kursus.total_pertemuan,
-                     program_kursus.nama_program, paket_kursus.nama_paket, karyawan.nama_lengkap as nama_instruktur,
-                     pembayaran.status_pembayaran, pembayaran.tanggal_konfirmasi')
-            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus')
-            ->join('detail_kursus', 'detail_kursus.id_kursus = kursus.id_kursus', 'left')
-            ->join('program_kursus', 'program_kursus.id_program = kursus.id_program', 'left')
-            ->join('paket_kursus', 'paket_kursus.id_kursus = pendaftaran.id_kursus', 'left')
-            ->join('karyawan', 'karyawan.id_karyawan = kursus.id_karyawan', 'left')
-            ->join('pembayaran', 'pembayaran.kode_invoice = pendaftaran.kode_invoice', 'left')
-            ->where('pendaftaran.id_siswa', $id_siswa)
-            ->whereIn('pembayaran.kode_invoice', $invoice_codes)
-            ->whereNotIn('pendaftaran.status', ['dibatalkan'])
-            ->orderBy('pendaftaran.tanggal_pendaftaran', 'DESC')
-            ->get()
-            ->getResultArray();
-
-        $data = [
-            'title' => 'Kursus yang Diikuti',
-            'title2' => 'Kursus Saya',
-            'kursus' => $kursus
-        ];
-        return view('backend/siswa/kursus/v_kursus', $data);
-    }
-
     public function detail_kursus($id_kursus)
     {
         $id_siswa = session()->get('id_siswa');
         $kursus = $this->M_kursus->getKursusWithDetailById($id_kursus);
         if (!$kursus) {
             session()->setFlashdata('pesan_warning', 'Kursus tidak ditemukan!');
-            return redirect()->to(base_url('home_siswa/v_kursus'));
+            return redirect()->to(base_url('home_siswa/kursus_saya'));
         }
 
         // Cari pendaftaran aktif untuk tombol Mulai Belajar
@@ -867,11 +859,29 @@ class Home_siswa extends BaseController
             ->whereIn('status', ['aktif', 'selesai'])
             ->first();
 
+        // Get quizzes for this course
+        $quizzes = $this->M_quiz->getQuizAktif($kursus['id_kursus']);
+        
+        // Add quiz results to quizzes if student is enrolled
+        if ($pendaftaran) {
+            foreach ($quizzes as &$quiz) {
+                $quiz_result = $this->db->table('quiz_hasil')
+                    ->where('id_quiz', $quiz['id_quiz'])
+                    ->where('id_siswa', $pendaftaran['id_siswa'])
+                    ->orderBy('created_at', 'DESC')
+                    ->get()
+                    ->getRowArray();
+                $quiz['is_lulus'] = $quiz_result && isset($quiz_result['status']) ? ($quiz_result['status'] == 'lulus' ? 1 : 0) : 0;
+                $quiz['total_nilai'] = $quiz_result ? $quiz_result['total_nilai'] : 0;
+            }
+        }
+
         $data = [
             'title' => 'Detail Kursus',
             'title2' => 'LPK INASABA',
             'kursus' => $kursus,
-            'pendaftaran' => $pendaftaran
+            'pendaftaran' => $pendaftaran,
+            'quizzes' => $quizzes
         ];
         return view('backend/siswa/kursus/v_dtl_ks', $data);
     }
@@ -897,7 +907,7 @@ class Home_siswa extends BaseController
         
         // Add materials and quizzes to modules
         foreach ($modul as &$m) {
-            $m['materi'] = $this->M_materi->getByModul($m['id_modul']);
+            $m['materi'] = $this->M_materi->getByModul($m['id_modul'], $id_pendaftaran);
             $m['materi'] = $this->filterUniqueMaterials($m['materi']);
             $this->addQuizToModule($m, $id_pendaftaran);
         }
@@ -913,6 +923,9 @@ class Home_siswa extends BaseController
         
         // Get quizzes for this course
         $quizzes = $this->M_quiz->getQuizAktif($pendaftaran['id_kursus']);
+        
+        // Add quiz count to course data
+        $pendaftaran['jumlah_quiz'] = count($quizzes);
         
         // Add submission status to tasks
         foreach ($tasks as &$task) {
@@ -942,7 +955,7 @@ class Home_siswa extends BaseController
             'title2' => $pendaftaran['nama_kursus'],
             'profil' => $this->M_siswa->get_profil($id_siswa),
             'pendaftaran' => $pendaftaran,
-            'modul' => $modul,
+            'modules' => $modul,
             'progres' => $progres,
             'progress_stats' => $progress_stats,
             'tasks' => $tasks,
@@ -1439,7 +1452,7 @@ class Home_siswa extends BaseController
         $id_siswa = session()->get('id_siswa');
         if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
 
-        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $id_kursus)->where('status', 'aktif')->first();
+        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $id_kursus)->whereIn('status', ['aktif', 'selesai'])->first();
         
         if (!$pendaftaran) {
             session()->setFlashdata('error', 'Anda belum terdaftar di kursus ini!');
@@ -1469,7 +1482,9 @@ class Home_siswa extends BaseController
     public function kerjakan($id_quiz)
     {
         $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
 
         $quiz = $this->M_quiz->getQuizWithSoal($id_quiz);
         if (!$quiz) {
@@ -1482,7 +1497,64 @@ class Home_siswa extends BaseController
             $quiz['jumlah_soal'] = count($quiz['soal']);
         }
 
-        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $quiz['id_kursus'])->where('status', 'aktif')->first();
+        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $quiz['id_kursus'])->whereIn('status', ['aktif', 'selesai'])->first();
+        
+        if (!$pendaftaran) {
+            session()->setFlashdata('error', 'Anda belum terdaftar di kursus ini!');
+            return redirect()->to(base_url('home_siswa/kursus_saya'));
+        }
+
+        $attempt = $this->M_quiz->getAttemptCount($id_quiz, $pendaftaran['id_pendaftaran']);
+        
+        // Check if student has passed with 70-100 score
+        $bestResult = $this->M_quiz_hasil->getNilaiTerbaik($id_quiz, $pendaftaran['id_pendaftaran']);
+        $hasPassedWithHighScore = $bestResult && $bestResult['total_nilai'] >= 70 && $bestResult['is_lulus'] == 1;
+        $hasExceededAttempts = $attempt >= 3;
+        
+        if ($hasPassedWithHighScore) {
+            session()->setFlashdata('error', 'Anda sudah lulus quiz dengan nilai ' . round($bestResult['total_nilai']) . '% dan tidak dapat mengulang kembali!');
+            return redirect()->to(base_url('home_siswa/quiz/' . $quiz['id_kursus']));
+        }
+        
+        if ($hasExceededAttempts) {
+            session()->setFlashdata('error', 'Anda sudah mencapai batas maksimal 3 percobaan!');
+            return redirect()->to(base_url('home_siswa/quiz/' . $quiz['id_kursus']));
+        }
+        
+        if ($attempt >= $quiz['max_attempt']) {
+            session()->setFlashdata('error', 'Anda sudah mencapai batas maksimal attempt!');
+            return redirect()->to(base_url('home_siswa/quiz/' . $quiz['id_kursus']));
+        }
+
+        $data = [
+            'title' => 'Preview Quiz - ' . $quiz['judul_quiz'],
+            'quiz' => $quiz,
+            'pendaftaran' => $pendaftaran,
+            'attempt' => $attempt + 1
+        ];
+        
+        return view('frontend/siswa/quiz/v_preview', $data);
+    }
+
+    public function start($id_quiz)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $quiz = $this->M_quiz->getQuizWithSoal($id_quiz);
+        if (!$quiz) {
+            session()->setFlashdata('error', 'Quiz tidak ditemukan!');
+            return redirect()->back();
+        }
+
+        // Add jumlah_soal to quiz data
+        if (isset($quiz['soal'])) {
+            $quiz['jumlah_soal'] = count($quiz['soal']);
+        }
+
+        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $quiz['id_kursus'])->whereIn('status', ['aktif', 'selesai'])->first();
         
         if (!$pendaftaran) {
             session()->setFlashdata('error', 'Anda belum terdaftar di kursus ini!');
@@ -1564,6 +1636,13 @@ class Home_siswa extends BaseController
 
         $this->M_quiz_hasil->simpanHasil($data_hasil);
         
+        // Send email notification with quiz result
+        $siswa_model = new \App\Models\M_siswa();
+        $siswa = $siswa_model->find($id_siswa);
+        if ($siswa) {
+            email_hasil_quiz($siswa, $quiz, $hasil, $is_lulus);
+        }
+
         // Update progress regardless of pass/fail status
         $this->update_total_progress($id_pendaftaran);
         
@@ -1582,7 +1661,7 @@ class Home_siswa extends BaseController
             return redirect()->to(base_url('home_siswa/kursus'));
         }
 
-        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $quiz['id_kursus'])->where('status', 'aktif')->first();
+        $pendaftaran = $this->M_pendaftaran->where('id_siswa', $id_siswa)->where('id_kursus', $quiz['id_kursus'])->whereIn('status', ['aktif', 'selesai'])->first();
 
         if (!$pendaftaran) {
             session()->setFlashdata('error', 'Anda belum terdaftar di kursus ini!');
@@ -1628,6 +1707,616 @@ class Home_siswa extends BaseController
         return view('backend/siswa/kursus/v_kursus', $data);
     }
 
+    public function ganti_password()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $data = [
+            'title' => 'Ganti Password',
+            'title2' => 'Ganti Password'
+        ];
+        return view('backend/siswa/v_ganti_password', $data);
+    }
+
+    public function update_password()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $rules = [
+            'password_lama' => 'required|min_length[6]',
+            'password_baru' => 'required|min_length[6]',
+            'konfirmasi_password' => 'required|matches[password_baru]'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', \Config\Services::validation()->getErrors());
+        }
+
+        $siswa = $this->M_siswa->find($id_siswa);
+        if (!$siswa) {
+            session()->setFlashdata('error', 'Data siswa tidak ditemukan!');
+            return redirect()->back();
+        }
+
+        // Verifikasi password lama
+        if (!password_verify($this->request->getPost('password_lama'), $siswa['kata_sandi'])) {
+            session()->setFlashdata('error', 'Password lama salah!');
+            return redirect()->back();
+        }
+
+        // Update password baru
+        $this->M_siswa->update($id_siswa, ['kata_sandi' => password_hash($this->request->getPost('password_baru'), PASSWORD_DEFAULT)]);
+
+        session()->setFlashdata('pesan', 'Password berhasil diganti!');
+        return redirect()->to(base_url('home_siswa/ganti-password'));
+    }
+
+    public function progress_dashboard()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $pendaftaran = $this->M_pendaftaran->getBySiswa($id_siswa);
+
+        $data = [
+            'title' => 'Progress Pembelajaran',
+            'title2' => 'Progress Pembelajaran',
+            'pendaftaran' => $pendaftaran
+        ];
+        return view('backend/siswa/progress/v_dashboard', $data);
+    }
+
+    public function update_progress($id_pendaftaran)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $progress = $this->request->getPost('progress');
+        
+        $this->M_pendaftaran->update($id_pendaftaran, ['progress' => $progress]);
+
+        return redirect()->to(base_url('home_siswa/profil'))->with('success', 'Profil berhasil diperbarui!');
+    }
+
+    public function v_nilai()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $pendaftaran = $this->M_pendaftaran->getBySiswa($id_siswa);
+
+        $data = [
+            'title' => 'Nilai Siswa',
+            'title2' => 'Nilai Siswa',
+            'pendaftaran' => $pendaftaran
+        ];
+        return view('backend/siswa/progress/v_nilai', $data);
+    }
+
+    public function detail_nilai($id_pendaftaran)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $pendaftaran = $this->M_pendaftaran->detailDaftar($id_pendaftaran);
+        if (!$pendaftaran || $pendaftaran['id_siswa'] != $id_siswa) {
+            session()->setFlashdata('error', 'Data tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/v_nilai'));
+        }
+
+        $data = [
+            'title' => 'Detail Nilai',
+            'title2' => 'Detail Nilai',
+            'pendaftaran' => $pendaftaran
+        ];
+        return view('backend/siswa/progress/v_detail_nilai', $data);
+    }
+
+    public function form_daftar($id_kursus)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $kursus = $this->M_kursus->find($id_kursus);
+        if (!$kursus) {
+            session()->setFlashdata('error', 'Kursus tidak ditemukan!');
+            return redirect()->to(base_url('home_website/kls_online'));
+        }
+
+        $siswa = $this->M_siswa->find($id_siswa);
+
+        $data = [
+            'title' => 'Form Pendaftaran',
+            'title2' => 'Form Pendaftaran',
+            'kursus' => $kursus,
+            'siswa' => $siswa
+        ];
+        return view('backend/siswa/pendaftaran/v_form_daftar', $data);
+    }
+
+    public function simpan_pendaftaran()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $rules = [
+            'id_kursus' => 'required',
+            'nama_paket' => 'required',
+            'harga_kursus' => 'required|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', \Config\Services::validation()->getErrors());
+        }
+
+        $data = [
+            'id_siswa' => $id_siswa,
+            'id_kursus' => $this->request->getPost('id_kursus'),
+            'kode_invoice' => 'INV-' . date('Ymd') . '-' . rand(1000, 9999),
+            'nama_paket' => $this->request->getPost('nama_paket'),
+            'harga_kursus' => $this->request->getPost('harga_kursus'),
+            'status' => 'pending',
+            'tanggal_pendaftaran' => date('Y-m-d H:i:s')
+        ];
+
+        $this->M_pendaftaran->insert($data);
+
+        session()->setFlashdata('pesan', 'Pendaftaran berhasil! Silakan lakukan pembayaran.');
+        return redirect()->to(base_url('home_siswa/status_bayar'));
+    }
+
+    public function riwayat_pendaftaran()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $pendaftaran = $this->M_pendaftaran->getBySiswa($id_siswa);
+
+        $data = [
+            'title' => 'Riwayat Pendaftaran',
+            'title2' => 'Riwayat Pendaftaran',
+            'pendaftaran' => $pendaftaran
+        ];
+        return view('backend/siswa/pendaftaran/v_riwayat', $data);
+    }
+
+    public function notifikasi()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        // Ambil notifikasi dari database (contoh)
+        $notifikasi = []; // Ganti dengan query notifikasi
+
+        $data = [
+            'title' => 'Notifikasi',
+            'title2' => 'Notifikasi',
+            'notifikasi' => $notifikasi
+        ];
+        return view('backend/siswa/notifikasi/v_index', $data);
+    }
+
+    public function mark_read($id_notifikasi)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        // Update status notifikasi menjadi dibaca
+        // $this->notifikasiModel->update($id_notifikasi, ['is_read' => 1]);
+
+        return redirect()->to(base_url('home_siswa/notifikasi'));
+    }
+
+    public function mark_all_read()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        // Update semua notifikasi menjadi dibaca
+        // $this->notifikasiModel->where('id_siswa', $id_siswa)->update(['is_read' => 1]);
+
+        return redirect()->to(base_url('home_siswa/notifikasi'));
+    }
+
+    public function ajax_update_materi_progress($id_materi)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Not logged in']);
+        }
+
+        $id_pendaftaran = $this->request->getPost('id_pendaftaran');
+        $is_completed = $this->request->getPost('is_completed');
+
+        // Update progress materi
+        $this->M_progres_materi->updateProgress($id_pendaftaran, $id_materi, $is_completed);
+
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    public function kursus_tersedia()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $kursus = $this->M_kursus->getKursusTersedia();
+
+        $data = [
+            'title' => 'Kursus Tersedia',
+            'title2' => 'Kursus Tersedia',
+            'kursus' => $kursus
+        ];
+        return view('backend/siswa/kursus/v_kursus_tersedia', $data);
+    }
+
+    public function akses_kursus($id_pendaftaran)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $pendaftaran = $this->M_pendaftaran->detailDaftar($id_pendaftaran);
+        if (!$pendaftaran || $pendaftaran['id_siswa'] != $id_siswa) {
+            session()->setFlashdata('error', 'Data tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/kursus_saya'));
+        }
+
+        $data = [
+            'title' => 'Akses Kursus',
+            'title2' => 'Akses Kursus',
+            'pendaftaran' => $pendaftaran
+        ];
+        return view('backend/siswa/kursus/v_akses_kursus', $data);
+    }
+
+    public function akses_modul($id_pendaftaran, $id_modul)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $pendaftaran = $this->M_pendaftaran->detailDaftar($id_pendaftaran);
+        if (!$pendaftaran || $pendaftaran['id_siswa'] != $id_siswa) {
+            session()->setFlashdata('error', 'Data tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/kursus_saya'));
+        }
+
+        $modul = $this->M_modul->find($id_modul);
+
+        $data = [
+            'title' => 'Akses Modul',
+            'title2' => 'Akses Modul',
+            'pendaftaran' => $pendaftaran,
+            'modul' => $modul
+        ];
+        return view('backend/siswa/kursus/v_akses_modul', $data);
+    }
+
+    public function view_materi($id_materi)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $materi = $this->M_materi->getMateriWithModul($id_materi);
+
+        $data = [
+            'title' => 'View Materi',
+            'title2' => 'View Materi',
+            'materi' => $materi
+        ];
+        return view('backend/siswa/materi/v_view_materi', $data);
+    }
+
+    public function form_kumpul($id_tugas)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $tugas = $this->M_tugas->detailTugas($id_tugas);
+
+        $data = [
+            'title' => 'Form Kumpul Tugas',
+            'title2' => 'Form Kumpul Tugas',
+            'tugas' => $tugas
+        ];
+        return view('backend/siswa/kml_tgs/v_add', $data);
+    }
+
+    public function lihat_penilaian($id_kumpul)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $kumpul = $this->M_pengumpulan->detailKumpul($id_kumpul);
+        if (!$kumpul || $kumpul['id_siswa'] != $id_siswa) {
+            session()->setFlashdata('error', 'Data tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/kumpul_tugas'));
+        }
+
+        $data = [
+            'title' => 'Penilaian Tugas',
+            'title2' => 'Penilaian Tugas',
+            'kumpul' => $kumpul
+        ];
+        return view('backend/siswa/kml_tgs/v_lihat_penilaian', $data);
+    }
+
+    public function sertifikat()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $sertifikat = $this->M_sertifikat->getBySiswa($id_siswa);
+
+        $data = [
+            'title' => 'Sertifikat Saya',
+            'title2' => 'Sertifikat Saya',
+            'sertifikat' => $sertifikat
+        ];
+        return view('backend/siswa/sertifikat/v_index', $data);
+    }
+
+    public function view_sertifikat($id_sertifikat)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $sertifikat = $this->M_sertifikat->find($id_sertifikat);
+        if (!$sertifikat || $sertifikat['id_siswa'] != $id_siswa) {
+            session()->setFlashdata('error', 'Sertifikat tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/sertifikat'));
+        }
+
+        $data = [
+            'title' => 'View Sertifikat',
+            'title2' => 'View Sertifikat',
+            'sertifikat' => $sertifikat
+        ];
+        return view('backend/siswa/sertifikat/v_sertifikat', $data);
+    }
+
+    public function download_sertifikat($id_sertifikat)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $sertifikat = $this->M_sertifikat->find($id_sertifikat);
+        if (!$sertifikat || $sertifikat['id_siswa'] != $id_siswa) {
+            session()->setFlashdata('error', 'Sertifikat tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/sertifikat'));
+        }
+
+        $file_path = WRITEPATH . 'uploads/sertifikat/' . $sertifikat['file_sertifikat'];
+        if (file_exists($file_path)) {
+            return $this->response->download($file_path, null);
+        } else {
+            session()->setFlashdata('error', 'File sertifikat tidak ditemukan!');
+            return redirect()->to(base_url('home_siswa/sertifikat'));
+        }
+    }
+
+    public function alumni()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $alumni = $this->M_alumni->where('id_siswa', $id_siswa)->first();
+
+        $data = [
+            'title' => 'Data Alumni',
+            'title2' => 'Data Alumni',
+            'alumni' => $alumni
+        ];
+        return view('backend/siswa/alumni/v_index', $data);
+    }
+
+    public function saran()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        if ($this->request->getMethod() === 'POST') {
+            $rules = [
+                'saran' => 'required|min_length[10]|max_length[1000]'
+            ];
+
+            if (!$this->validate($rules)) {
+                return redirect()->back()->withInput()->with('errors', \Config\Services::validation()->getErrors());
+            }
+
+            $data = [
+                'id_siswa' => $id_siswa,
+                'saran' => $this->request->getPost('saran'),
+                'tanggal_saran' => date('Y-m-d H:i:s')
+            ];
+
+            $this->M_saran->insert($data);
+            session()->setFlashdata('pesan', 'Saran berhasil dikirim!');
+            return redirect()->to(base_url('home_siswa/saran'));
+        }
+
+        $data = [
+            'title' => 'Saran & Kritik',
+            'title2' => 'Saran & Kritik'
+        ];
+        return view('backend/siswa/saran/v_index', $data);
+    }
+
+    public function add_to_cart($id_paket = null)
+    {
+        if (!session()->get('id_siswa')) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Anda harus login terlebih dahulu',
+                'redirect' => base_url('auth_login/login_siswa')
+            ]);
+        }
+
+        if (!$id_paket) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'ID Paket tidak valid'
+            ]);
+        }
+
+        $paket = $this->M_paket->find($id_paket);
+        if (!$paket) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Paket tidak ditemukan'
+            ]);
+        }
+
+        $id_siswa = session()->get('id_siswa');
+
+        $existing = $this->M_keranjang->where([
+            'id_siswa' => $id_siswa,
+            'id_paket' => $id_paket
+        ])->first();
+
+        if ($existing) {
+            return $this->response->setJSON([
+                'status' => 'info',
+                'message' => 'Paket sudah ada di keranjang'
+            ]);
+        }
+
+        $data = [
+            'id_siswa' => $id_siswa,
+            'id_paket' => $id_paket,
+            'jumlah' => 1,
+            'tanggal' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->M_keranjang->insert($data)) {
+            $cart_count = $this->M_keranjang->where('id_siswa', $id_siswa)->countAll();
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Berhasil ditambahkan ke keranjang',
+                'cart_count' => $cart_count,
+                'paket_nama' => $paket['nama_paket'] ?? 'Paket Kursus'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal menambahkan ke keranjang'
+            ]);
+        }
+    }
+
+    public function beli_sekarang($id_paket = null)
+    {
+        if (!session()->get('id_siswa')) {
+            session()->setFlashdata('error', 'Anda harus login terlebih dahulu');
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        if (!$id_paket) {
+            session()->setFlashdata('error', 'Paket tidak valid');
+            return redirect()->back();
+        }
+
+        $paket = $this->M_paket->find($id_paket);
+        if (!$paket) {
+            session()->setFlashdata('error', 'Paket tidak ditemukan');
+            return redirect()->back();
+        }
+
+        $this->M_keranjang->hapus_keranjang_siswa(session()->get('id_siswa'));
+
+        $data = [
+            'id_siswa' => session()->get('id_siswa'),
+            'id_paket' => $id_paket,
+            'jumlah' => 1,
+            'tanggal' => date('Y-m-d H:i:s')
+        ];
+
+        $this->M_keranjang->insert($data);
+
+        return redirect()->to(base_url('home_siswa/checkout'));
+    }
+
+    public function get_cart_count()
+    {
+        if (!session()->get('id_siswa')) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'cart_count' => 0
+            ]);
+        }
+
+        $cart_count = $this->M_keranjang->where('id_siswa', session()->get('id_siswa'))->countAll();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'cart_count' => $cart_count
+        ]);
+    }
+
     public function retry($id_quiz)
     {
         $id_siswa = session()->get('id_siswa');
@@ -1646,6 +2335,9 @@ class Home_siswa extends BaseController
         $quiz = $this->M_quiz->find($id_quiz);
         $jawaban_input = $this->request->getPost('jawaban'); // Array [soal_id => jawaban]
 
+        // Debug: Log jawaban input
+        log_message('debug', 'Jawaban Input: ' . json_encode($jawaban_input));
+
         $jawaban_siswa = [];
         if (!empty($jawaban_input)) {
             foreach ($jawaban_input as $soal_id => $j) {
@@ -1653,15 +2345,24 @@ class Home_siswa extends BaseController
             }
         }
 
+        // Debug: Log jawaban siswa yang akan disimpan
+        log_message('debug', 'Jawaban Siswa: ' . json_encode($jawaban_siswa));
+
         $hasil = $this->M_quiz->hitungNilai($quiz['soal_json'], $jawaban_siswa);
 
         $is_lulus = ($hasil['total_nilai'] >= ($quiz['passing_grade'] ?? 70)) ? 1 : 0;
+
+        $attempt_count = $this->M_quiz->getAttemptCount($id_quiz, $id_pendaftaran);
+        $attempt_ke = $attempt_count + 1;
+
+        // Debug: Log attempt info
+        log_message('debug', 'Attempt Count: ' . $attempt_count . ', Attempt Ke: ' . $attempt_ke);
 
         $data_hasil = [
             'id_quiz' => $id_quiz,
             'id_pendaftaran' => $id_pendaftaran,
             'id_siswa' => $id_siswa,
-            'attempt_ke' => $this->M_quiz->getAttemptCount($id_quiz, $id_pendaftaran) + 1,
+            'attempt_ke' => $attempt_ke,
             'jawaban_json' => json_encode($jawaban_siswa),
             'total_nilai' => $hasil['total_nilai'],
             'total_benar' => $hasil['total_benar'],
@@ -1671,7 +2372,17 @@ class Home_siswa extends BaseController
             'waktu_selesai' => date('Y-m-d H:i:s')  // Waktu selesai saat submit
         ];
 
+        // Debug: Log data yang akan disimpan
+        log_message('debug', 'Data Hasil: ' . json_encode($data_hasil));
+
         $this->M_quiz_hasil->insert($data_hasil);
+
+        // Send email notification with quiz result
+        $siswa_model = new \App\Models\M_siswa();
+        $siswa = $siswa_model->find($id_siswa);
+        if ($siswa) {
+            email_hasil_quiz($siswa, $quiz, $hasil, $is_lulus);
+        }
 
         // Update progress regardless of pass/fail status
         $this->update_total_progress($id_pendaftaran);
@@ -1680,75 +2391,10 @@ class Home_siswa extends BaseController
             ->with($is_lulus ? 'pesan' : 'pesan_warning', $is_lulus ? 'Selamat! Anda lulus kuis.' : 'Maaf, Anda belum lulus kuis. Silakan coba lagi.');
     }
 
-    public function sertifikat()
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
-
-        $certificates = $this->M_sertifikat->getBySiswa($id_siswa);
-        $pending_courses = $this->getPendingCourses($id_siswa);
-        $profil = $this->M_siswa->get_profil($id_siswa);
-
-        $data = [
-            'title' => 'Sertifikat Saya',
-            'title2' => 'Sertifikat Saya',
-            'sertifikat' => $certificates,
-            'pending_courses' => $pending_courses,
-            'siswa' => $profil
-        ];
-        return view('backend/siswa/sertifikat/v_index', $data);
-    }
-
-    public function view_sertifikat($id_sertifikat)
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
-
-        $certificate = $this->M_sertifikat
-            ->where('id_sertifikat', $id_sertifikat)
-            ->where('id_siswa', $id_siswa)
-            ->first();
-
-        if (!$certificate) {
-            throw new \CodeIgniter\Exceptions\PageNotFoundException('Sertifikat tidak ditemukan');
-        }
-
-        $data = [
-            'title' => 'Detail Sertifikat',
-            'title2' => 'Detail Sertifikat',
-            'sertifikat' => $certificate
-        ];
-
-        return view('backend/siswa/sertifikat/v_view', $data);
-    }
-
-    public function download_sertifikat($id_sertifikat)
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
-
-        $certificate = $this->M_sertifikat
-            ->where('id_sertifikat', $id_sertifikat)
-            ->where('id_siswa', $id_siswa)
-            ->first();
-
-        if (!$certificate || empty($certificate['file_pdf'])) {
-            session()->setFlashdata('error', 'Sertifikat tidak ditemukan!');
-            return redirect()->back();
-        }
-
-        $file_path = WRITEPATH . 'uploads/certificates/' . $certificate['file_pdf'];
-        if (file_exists($file_path)) {
-            return $this->response->download($file_path, null);
-        } else {
-            session()->setFlashdata('error', 'File sertifikat tidak ditemukan!');
-            return redirect()->back();
-        }
-    }
-
     private function getPendingCourses($id_siswa)
     {
         return $this->M_pendaftaran
+            ->from('pendaftaran p')
             ->select('p.*, k.nama_kursus, k.slug')
             ->join('kursus k', 'k.id_kursus = p.id_kursus')
             ->where('p.id_siswa', $id_siswa)
@@ -1961,705 +2607,4 @@ class Home_siswa extends BaseController
         return redirect()->to(base_url('home_siswa'));
     }
 
-    /**
-     * Add to Cart - AJAX endpoint untuk menambah paket ke keranjang
-     */
-    public function add_to_cart($id_paket = null)
-    {
-        // Cek login
-        if (!session()->get('id_siswa')) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Anda harus login terlebih dahulu',
-                'redirect' => base_url('auth_login/login_siswa')
-            ]);
-        }
-
-        if (!$id_paket) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'ID Paket tidak valid'
-            ]);
-        }
-
-        // Ambil data paket
-        $paket = $this->M_paket->find($id_paket);
-        if (!$paket) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Paket tidak ditemukan'
-            ]);
-        }
-
-        $id_siswa = session()->get('id_siswa');
-
-        // Cek sudah ada di cart
-        $existing = $this->M_keranjang->where([
-            'id_siswa' => $id_siswa,
-            'id_paket' => $id_paket
-        ])->first();
-
-        if ($existing) {
-            return $this->response->setJSON([
-                'status' => 'info',
-                'message' => 'Paket sudah ada di keranjang'
-            ]);
-        }
-
-        // Tambah ke cart
-        $data = [
-            'id_siswa' => $id_siswa,
-            'id_paket' => $id_paket,
-            'jumlah' => 1,
-            'tanggal' => date('Y-m-d H:i:s')
-        ];
-
-        if ($this->M_keranjang->insert($data)) {
-            // Hitung total cart
-            $cart_count = $this->M_keranjang->where('id_siswa', $id_siswa)->countAll();
-
-            return $this->response->setJSON([
-                'status' => 'success',
-                'message' => 'Berhasil ditambahkan ke keranjang',
-                'cart_count' => $cart_count,
-                'paket_nama' => $paket['nama_paket'] ?? 'Paket Kursus'
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Gagal menambahkan ke keranjang'
-            ]);
-        }
     }
-
-    /**
-     * Beli Sekarang - Langsung ke checkout untuk satu paket
-     */
-    public function beli_sekarang($id_paket = null)
-    {
-        // Cek login
-        if (!session()->get('id_siswa')) {
-            session()->setFlashdata('error', 'Anda harus login terlebih dahulu');
-            return redirect()->to(base_url('auth_login/login_siswa'));
-        }
-
-        if (!$id_paket) {
-            session()->setFlashdata('error', 'Paket tidak valid');
-            return redirect()->back();
-        }
-
-        // Ambil data paket
-        $paket = $this->M_paket->find($id_paket);
-        if (!$paket) {
-            session()->setFlashdata('error', 'Paket tidak ditemukan');
-            return redirect()->back();
-        }
-
-        // Hapus cart lama (opsional, untuk checkout langsung)
-        $this->M_keranjang->hapus_keranjang_siswa(session()->get('id_siswa'));
-
-        // Tambah paket ini ke cart
-        $data = [
-            'id_siswa' => session()->get('id_siswa'),
-            'id_paket' => $id_paket,
-            'jumlah' => 1,
-            'tanggal' => date('Y-m-d H:i:s')
-        ];
-
-        $this->M_keranjang->insert($data);
-
-        // Langsung ke checkout
-        return redirect()->to(base_url('home_siswa/checkout'));
-    }
-
-    /**
-     * Kirim notifikasi ke Staf Admin saat ada bukti pembayaran baru diunggah
-     */
-    private function kirimNotifikasiBuktiBayar($id_pembayaran, $pembayaran, $fileName)
-    {
-        log_message('info', '=== MULAI PROSES NOTIFIKASI BUKTI BAYAR ===');
-        
-        // Get student data
-        $id_siswa = session()->get('id_siswa');
-        $siswa = $this->M_siswa->find($id_siswa);
-        
-        if (!$siswa) {
-            log_message('error', 'Siswa tidak ditemukan untuk notifikasi bukti bayar');
-            return false;
-        }
-
-        log_message('info', 'Data siswa ditemukan: ' . $siswa['nama_lengkap']);
-
-        // Get updated payment data with bank info
-        $updated_pembayaran = $this->M_pembayaran->find($id_pembayaran);
-        
-        // 1. Kirim Email ke Staf Admin
-        log_message('info', 'Mengirim email notifikasi...');
-        $emailResult = $this->kirimEmailBuktiBayar($updated_pembayaran, $siswa, $fileName);
-        log_message('info', 'Hasil email: ' . ($emailResult ? 'SUCCESS' : 'FAILED'));
-        
-        // 2. Kirim WA ke Staf Admin
-        log_message('info', 'Mengirim WA notifikasi...');
-        $waResult = $this->kirimWABuktiBayar($updated_pembayaran, $siswa, $fileName);
-        log_message('info', 'Hasil WA: ' . ($waResult ? 'SUCCESS' : 'FAILED'));
-        
-        log_message('info', '=== SELESAI PROSES NOTIFIKASI BUKTI BAYAR ===');
-        return $emailResult || $waResult; // Return true jika salah satu berhasil
-    }
-
-    /**
-     * Kirim email notifikasi bukti pembayaran ke Staf Admin
-     */
-    private function kirimEmailBuktiBayar($pembayaran, $siswa, $fileName)
-    {
-        log_message('info', '--- MULAI KIRIM EMAIL ---');
-        
-        $email = new \CodeIgniter\Email\Email();
-        
-        // Konfigurasi email
-        $db = \Config\Database::connect();
-        
-        // Ambil semua admin dan superadmin yang aktif
-        $adminEmails = $db->table('karyawan')
-            ->select('email, nama_lengkap')
-            ->where('level', 'staf_admin')
-            ->where('status', 'aktif')
-            ->get()
-            ->getResultArray();
-            
-        $superadminEmails = $db->table('karyawan')
-            ->select('email, nama_lengkap')
-            ->where('level', 'superadmin')
-            ->where('status', 'aktif')
-            ->get()
-            ->getResultArray();
-            
-        // Combine all admins
-        $allAdmins = array_merge($adminEmails, $superadminEmails);
-        
-        if (empty($allAdmins)) {
-            log_message('error', 'Tidak ada admin yang aktif untuk notifikasi email');
-            return false;
-        }
-        
-        // Extract email addresses
-        $emailRecipients = array_column($allAdmins, 'email');
-        $adminNames = array_column($allAdmins, 'nama_lengkap');
-        
-        // Konfigurasi email pengirim adalah email siswa
-        $email->setFrom($siswa['email'], $siswa['nama_lengkap'] . ' - Siswa LPK INASABA');
-        $email->setTo($emailRecipients); // Kirim ke semua admin
-        $email->setSubject('📸 Bukti Pembayaran Baru - ' . $pembayaran['kode_transaksi']);
-        
-        log_message('info', 'Email konfigurasi: From=' . $siswa['email'] . ' (' . $siswa['nama_lengkap'] . '), To=' . implode(', ', $emailRecipients));
-        
-        // Template email yang lebih personal
-        $adminList = implode(', ', $adminNames);
-        $message = "
-        <h2>📸 Bukti Pembayaran Baru Diunggah</h2>
-        <p>Hai Tim Admin LPK INASABA,</p>
-        <p>Siswa <strong>{$siswa['nama_lengkap']}</strong> telah mengunggah bukti pembayaran yang perlu segera diverifikasi:</p>
-        
-        <table border='1' cellpadding='10' style='border-collapse: collapse; width: 100%;'>
-            <tr><td><strong>Kode Transaksi</strong></td><td>{$pembayaran['kode_transaksi']}</td></tr>
-            <tr><td><strong>Kode Invoice</strong></td><td>{$pembayaran['kode_invoice']}</td></tr>
-            <tr><td><strong>Nama Siswa (Pengirim)</strong></td><td>{$siswa['nama_lengkap']}</td></tr>
-            <tr><td><strong>Email Siswa (Pengirim)</strong></td><td>{$siswa['email']}</td></tr>
-            <tr><td><strong>Telepon Siswa</strong></td><td>{$siswa['no_telepon']}</td></tr>
-            <tr><td><strong>Bank Tujuan</strong></td><td>{$pembayaran['bank_tujuan']}</td></tr>
-            <tr><td><strong>Nama Pengirim Rekening</strong></td><td>{$pembayaran['nama_pengirim']}</td></tr>
-            <tr><td><strong>Jumlah</strong></td><td>Rp " . number_format($pembayaran['jumlah_bayar'], 0, ',', '.') . "</td></tr>
-            <tr><td><strong>Tanggal Upload</strong></td><td>" . date('d/m/Y H:i', strtotime($pembayaran['tanggal_transaksi'])) . "</td></tr>
-            <tr><td><strong>Status</strong></td><td><span style='color: orange; font-weight: bold;'>PENDING VERIFIKASI</span></td></tr>
-        </table>
-        
-        <p><strong>File Bukti Pembayaran:</strong> {$fileName}</p>
-        
-        <p>
-            <a href='" . base_url('home_karyawan/pembayaran') . "' 
-               style='background: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>
-               📸 Lihat & Verifikasi Bukti Pembayaran
-            </a>
-        </p>
-        
-        <hr>
-        <p><em><strong>Catatan:</strong> Email ini dikirim dari sistem otomatis atas nama siswa yang mengupload bukti pembayaran. Segera verifikasi untuk melanjutkan proses pendaftaran.</em></p>
-        <small><em>Email ini dikirim otomatis oleh LPK INASABA System saat ada bukti pembayaran baru</em></small>
-        ";
-        
-        $email->setMessage($message);
-        
-        log_message('info', 'Message email diset, mencoba mengirim ke ' . count($emailRecipients) . ' admin...');
-        
-        try {
-            $result = $email->send();
-            log_message('info', 'Email send result: ' . ($result ? 'SUCCESS' : 'FAILED'));
-            
-            if (!$result) {
-                log_message('error', 'Email error: ' . print_r($email->printDebugger(), true));
-            } else {
-                log_message('info', 'Email notifikasi bukti pembayaran terkirim ke: ' . implode(', ', $emailRecipients));
-            }
-            
-            return $result;
-        } catch (\Exception $e) {
-            log_message('error', 'Exception saat kirim email: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Kirim WA notifikasi bukti pembayaran ke Staf Admin
-     */
-    private function kirimWABuktiBayar($pembayaran, $siswa, $fileName)
-    {
-        // Ambil semua admin dan superadmin yang aktif
-        $db = \Config\Database::connect();
-        
-        // Get all staf_admin
-        $adminWAs = $db->table('karyawan')
-            ->select('id_karyawan, nama_lengkap, no_telepon')
-            ->where('level', 'staf_admin')
-            ->where('status', 'aktif')
-            ->get()
-            ->getResultArray();
-            
-        // Get all superadmin
-        $superadminWAs = $db->table('karyawan')
-            ->select('id_karyawan, nama_lengkap, no_telepon')
-            ->where('level', 'superadmin')
-            ->where('status', 'aktif')
-            ->get()
-            ->getResultArray();
-            
-        // Combine all admins
-        $allAdmins = array_merge($adminWAs, $superadminWAs);
-        
-        if (empty($allAdmins)) {
-            log_message('error', 'Tidak ada admin yang aktif untuk notifikasi WA');
-            return false;
-        }
-        
-        $successCount = 0;
-        $totalAdmins = count($allAdmins);
-        
-        // Kirim ke setiap admin secara individual
-        foreach ($allAdmins as $admin) {
-            // Format nomor WhatsApp yang benar (hapus 0 di depan, tambah 62)
-            $nomorWA = preg_replace('/^0/', '62', $admin['no_telepon']);
-            
-            // Pesan personal untuk setiap admin
-            $pesan = $this->buatPesanPersonal($admin, $pembayaran, $siswa, $fileName);
-            
-            // Kirim WA menggunakan API
-            $result = $this->kirimWhatsAppAPI($nomorWA, $pesan, $admin);
-            
-            if ($result) {
-                $successCount++;
-                log_message('info', 'WA terkirim ke admin: ' . $admin['nama_lengkap'] . ' (' . $admin['no_telepon'] . ' → ' . $nomorWA . ')');
-            } else {
-                log_message('error', 'Gagal kirim WA ke admin: ' . $admin['nama_lengkap'] . ' (' . $admin['no_telepon'] . ' → ' . $nomorWA . ')');
-            }
-        }
-        
-        log_message('info', "WA notifikasi terkirim ke $successCount/$totalAdmins admin");
-        return $successCount > 0;
-    }
-    
-    /**
-     * Buat pesan personal untuk admin
-     */
-    private function buatPesanPersonal($admin, $pembayaran, $siswa, $fileName)
-    {
-        $namaAdmin = $admin['nama_lengkap'];
-        
-        return "👋 Hai *{$namaAdmin}*,
-
-📸 *BUKTI PEMBAYARAN BARU - LPK INASABA* 📸
-
-Ada siswa yang baru saja upload bukti pembayaran, mohon segera dicek ya:
-
-📄 *Detail Pembayaran:*
-• Kode Transaksi: `{$pembayaran['kode_transaksi']}`
-• Invoice: `{$pembayaran['kode_invoice']}`
-• Bank Tujuan: {$pembayaran['bank_tujuan']}
-• Nama Pengirim: {$pembayaran['nama_pengirim']}
-• Jumlah: Rp " . number_format($pembayaran['jumlah_bayar'], 0, ',', '.') . "
-• Waktu Upload: " . date('d/m/Y H:i', strtotime($pembayaran['tanggal_transaksi'])) . "
-• Status: *MENUNGGU VERIFIKASI* ⏰
-
-👤 *Data Siswa:*
-• Nama Lengkap: {$siswa['nama_lengkap']}
-• Email: {$siswa['email']}
-• Telepon: {$siswa['no_telepon']}
-
-📎 *File Bukti Pembayaran:*
-`{$fileName}`
-
-🔗 *Link Langsung Verifikasi:*
-" . base_url('home_karyawan/pembayaran') . "
-
-Terima kasih atas perhatiannya! 🙏
-
-_Dikirim otomatis oleh LPK INASABA System_";
-    }
-    
-    /**
-     * Kirim WhatsApp menggunakan API (WatsApp.com + CallmeBot fallback)
-     */
-    private function kirimWhatsAppAPI($nomorTarget, $pesan, $admin)
-    {
-        // Format nomor yang benar (hapus 0 di depan, tambah 62)
-        $nomorTarget = preg_replace('/^0/', '62', $nomorTarget);
-        
-        // Coba WatsApp.com dulu (gratis 50 pesan/hari)
-        $result1 = $this->kirimWatsAppCom($nomorTarget, $pesan, $admin);
-        
-        if ($result1) {
-            log_message('info', "✅ WatsApp.com berhasil untuk {$admin['nama_lengkap']}");
-            return true;
-        }
-        
-        // Fallback ke CallmeBot (gratis 20 pesan/hari)
-        log_message('info', "🔄 WatsApp.com gagal, coba CallmeBot untuk {$admin['nama_lengkap']}");
-        $result2 = $this->kirimCallmeBot($nomorTarget, $pesan, $admin);
-        
-        if ($result2) {
-            log_message('info', "✅ CallmeBot berhasil untuk {$admin['nama_lengkap']}");
-            return true;
-        }
-        
-        log_message('error', "❌ Semua API gagal untuk {$admin['nama_lengkap']}");
-        return false;
-    }
-    
-    /**
-     * Kirim via WatsApp.com (Gratis 50 pesan/hari tanpa token)
-     */
-    private function kirimWatsAppCom($nomorTarget, $pesan, $admin)
-    {
-        $url = 'https://api.watsapp.com/v1/messages';
-        
-        $payload = [
-            'phone_number' => $nomorTarget,
-            'message' => $pesan,
-            'device_id' => 'device_1'
-        ];
-        
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'User-Agent: LPK-INASABA-System/1.0'
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-        curl_close($curl);
-        
-        log_message('info', "WatsApp.com untuk {$admin['nama_lengkap']}: HTTP {$httpCode}");
-        
-        return $httpCode == 200;
-    }
-    
-    /**
-     * Kirim via CallmeBot (Gratis 20 pesan/hari tanpa token)
-     */
-    private function kirimCallmeBot($nomorTarget, $pesan, $admin)
-    {
-        $url = 'https://api.callmebot.com/whatsapp.php';
-        
-        $payload = [
-            'phone' => $nomorTarget,
-            'message' => $pesan,
-            'apikey' => 'free' // API key gratis
-        ];
-        
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => $url . '?' . http_build_query($payload),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-            CURLOPT_HTTPHEADER => [
-                'User-Agent: LPK-INASABA-System/1.0'
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $error = curl_error($curl);
-        curl_close($curl);
-        
-        log_message('info', "CallmeBot untuk {$admin['nama_lengkap']}: HTTP {$httpCode}");
-        
-        // CallmeBot success jika response mengandung "Success"
-        return $httpCode == 200 && strpos($response, 'Success') !== false;
-    }
-
-    /**
-     * Kirim notifikasi ke Staf Admin saat ada pembayaran baru
-     */
-    private function kirimNotifikasiKeAdmin($pembayaran, $siswa)
-    {
-        // 1. Kirim Email ke Staf Admin
-        $this->kirimEmailKeAdmin($pembayaran, $siswa);
-        
-        // 2. Kirim WA ke Staf Admin
-        $this->kirimWAKeAdmin($pembayaran, $siswa);
-    }
-
-    /**
-     * Kirim email notifikasi ke Staf Admin
-     */
-    private function kirimEmailKeAdmin($pembayaran, $siswa)
-    {
-        $email = new \CodeIgniter\Email\Email();
-        
-        // Konfigurasi email (ambil dari database karyawan level staf_admin)
-        $db = \Config\Database::connect();
-        $adminEmail = $db->table('karyawan')
-            ->select('email')
-            ->where('level', 'staf_admin')
-            ->where('status', 'aktif')
-            ->orderBy('id_karyawan', 'ASC')
-            ->limit(1)
-            ->get()
-            ->getRowArray();
-        
-        $emailAdmin = $adminEmail ? $adminEmail['email'] : 'haidarhusseinmovic@gmail.com'; // Fallback jika tidak ada
-        
-        $email->setFrom('haidarhusseinmovic@gmail.com', 'LPK INASABA System');
-        $email->setTo($emailAdmin); // Email staf admin dari database
-        $email->setSubject('🔔 Pembayaran Baru - ' . $pembayaran['kode_transaksi']);
-        
-        // Template email
-        $message = "
-        <h2>🔔 Notifikasi Pembayaran Baru</h2>
-        <p>Terdapat pembayaran baru yang perlu diverifikasi:</p>
-        
-        <table border='1' cellpadding='10' style='border-collapse: collapse;'>
-            <tr><td><strong>Kode Transaksi</strong></td><td>{$pembayaran['kode_transaksi']}</td></tr>
-            <tr><td><strong>Kode Invoice</strong></td><td>{$pembayaran['kode_invoice']}</td></tr>
-            <tr><td><strong>Nama Siswa</strong></td><td>{$siswa['nama_lengkap']}</td></tr>
-            <tr><td><strong>Email Siswa</strong></td><td>{$siswa['email']}</td></tr>
-            <tr><td><strong>Telepon</strong></td><td>{$siswa['no_telepon']}</td></tr>
-            <tr><td><strong>Produk</strong></td><td>Multiple Items</td></tr>
-            <tr><td><strong>Jumlah</strong></td><td>Rp " . number_format($pembayaran['jumlah_bayar'], 0, ',', '.') . "</td></tr>
-            <tr><td><strong>Tanggal</strong></td><td>" . date('d/m/Y H:i', strtotime($pembayaran['tanggal_transaksi'])) . "</td></tr>
-            <tr><td><strong>Status</strong></td><td><span style='color: orange; font-weight: bold;'>PENDING</span></td></tr>
-        </table>
-        
-        <p>
-            <a href='" . base_url('home_karyawan/pembayaran') . "' 
-               style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-               📋 Verifikasi Pembayaran
-            </a>
-        </p>
-        
-        <hr>
-        <small><em>Email ini dikirim otomatis oleh LPK INASABA System</em></small>
-        ";
-        
-        $email->setMessage($message);
-        
-        return $email->send();
-    }
-
-    /**
-     * Kirim WA notifikasi ke Staf Admin
-     */
-    private function kirimWAKeAdmin($pembayaran, $siswa)
-    {
-        // Nomor WA Staf Admin (ambil dari database karyawan level staf_admin)
-        $db = \Config\Database::connect();
-        $adminWA = $db->table('karyawan')
-            ->select('no_telepon')
-            ->where('level', 'staf_admin')
-            ->where('status', 'aktif')
-            ->orderBy('id_karyawan', 'ASC')
-            ->limit(1)
-            ->get()
-            ->getRowArray();
-        
-        $nomorWAAdmin = $adminWA ? '62' . substr($adminWA['no_telepon'], 1) : '628522866119'; // Fallback jika tidak ada
-        
-        log_message('info', 'WA Target: ' . $nomorWAAdmin . ' (Admin: ' . ($adminWA ? $adminWA['no_telepon'] : 'Fallback') . ')');
-        
-        // Pesan WhatsApp
-        $pesan = "🔔 *PEMBAYARAN BARU - LPK INASABA* 🔔
-
-📄 *Detail Pembayaran:*
-• Kode: {$pembayaran['kode_transaksi']}
-• Invoice: {$pembayaran['kode_invoice']}
-• Produk: Multiple Items
-• Jumlah: Rp " . number_format($pembayaran['jumlah_bayar'], 0, ',', '.') . "
-• Tanggal: " . date('d/m/Y H:i', strtotime($pembayaran['tanggal_transaksi'])) . "
-• Status: *PENDING* ⏰
-
-👤 *Data Siswa:*
-• Nama: {$siswa['nama_lengkap']}
-• Email: {$siswa['email']}
-• Telepon: {$siswa['no_telepon']}
-
-🔗 *Link Verifikasi:*
-" . base_url('home_karyawan/pembayaran') . "
-
-_Silakan segera verifikasi pembayaran ini._";
-
-        // Kirim WA menggunakan API (contoh dengan Fonnte)
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => 'https://api.fonnte.com/send',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => http_build_query([
-                'target' => $nomorWAAdmin,
-                'message' => $pesan
-            ]),
-            CURLOPT_HTTPHEADER => [
-                'Authorization: 1xHSJRoHVFU2UeY3pEPb', // Ganti dengan token API Fonnte Anda
-                'Content-Type: application/x-www-form-urlencoded'
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-        
-        if ($httpCode == 200) {
-            log_message('info', 'WA notifikasi terkirim ke admin: ' . $pembayaran['kode_transaksi']);
-            return true;
-        } else {
-            log_message('error', 'Gagal kirim WA ke admin: HTTP ' . $httpCode);
-            return false;
-        }
-    }
-
-    /**
-     * Get Cart Count - AJAX endpoint untuk update cart counter
-     */
-    public function get_cart_count()
-    {
-        if (!session()->get('id_siswa')) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'cart_count' => 0
-            ]);
-        }
-
-        $cart_count = $this->M_keranjang->where('id_siswa', session()->get('id_siswa'))->countAll();
-
-        return $this->response->setJSON([
-            'status' => 'success',
-            'cart_count' => $cart_count
-        ]);
-    }
-
-    /**
-     * Halaman Review Saya - Daftar review yang pernah diberikan
-     */
-    public function review_saya()
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
-
-        $profil = $this->M_siswa->get_profil($id_siswa);
-        $reviews = $this->M_review->getReviewSaya($id_siswa);
-
-        $data = [
-            'title'   => 'Review Saya',
-            'title2'  => 'Review Saya',
-            'profil'  => $profil,
-            'reviews' => $reviews,
-        ];
-
-        return view('backend/siswa/review/v_review_saya', $data);
-    }
-
-    // AJAX check payment status
-    public function check_payment_status()
-    {
-        // Check if AJAX request
-        if (!$this->request->isAJAX()) {
-            return $this->response->setJSON(['error' => 'Invalid request'], 400);
-        }
-
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) {
-            return $this->response->setJSON(['error' => 'Not logged in'], 401);
-        }
-
-        // Get current payment status from database
-        $currentStatus = $this->db->table('pendaftaran')
-            ->select('pendaftaran.*, pembayaran.status_pembayaran, pembayaran.tanggal_konfirmasi')
-            ->join('pembayaran', 'pembayaran.kode_invoice = pendaftaran.kode_invoice', 'left')
-            ->where('pendaftaran.id_siswa', $id_siswa)
-            ->whereIn('pembayaran.status_pembayaran', ['pending', 'processing', 'success', 'failed', 'refunded'])
-            ->get()
-            ->getResultArray();
-
-        // Get last checked status from session
-        $lastCheckedStatus = session()->get('last_payment_status') ?? [];
-        $hasUpdates = false;
-        $updatedPayments = [];
-
-        foreach ($currentStatus as $payment) {
-            $invoiceKey = $payment['kode_invoice'];
-            $currentPaymentStatus = $payment['status_pembayaran'];
-            
-            // Check if this payment was previously pending/processing and now is success/failed
-            if (isset($lastCheckedStatus[$invoiceKey])) {
-                $previousStatus = $lastCheckedStatus[$invoiceKey];
-                
-                // Only trigger alert if status changed from pending/processing to success/failed
-                if (($previousStatus === 'pending' || $previousStatus === 'processing') && 
-                    ($currentPaymentStatus === 'success' || $currentPaymentStatus === 'failed')) {
-                    $hasUpdates = true;
-                    $updatedPayments[] = $payment;
-                }
-            } else {
-                // First time checking, store current status but don't trigger alert
-                $lastCheckedStatus[$invoiceKey] = $currentPaymentStatus;
-            }
-        }
-
-        // Update session with current status for next check
-        session()->set('last_payment_status', 
-            array_column($currentStatus, 'status_pembayaran', 'kode_invoice')
-        );
-
-        return $this->response->setJSON([
-            'has_updates' => $hasUpdates,
-            'status_data' => $updatedPayments,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
-    }
-
-    // Reset payment status tracking (called when page loads)
-    public function reset_payment_tracking()
-    {
-        if ($this->request->isAJAX()) {
-            session()->remove('last_payment_status');
-            return $this->response->setJSON(['success' => true]);
-        }
-        return $this->response->setJSON(['error' => 'Invalid request'], 400);
-    }
-}

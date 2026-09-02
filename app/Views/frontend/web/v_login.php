@@ -51,6 +51,7 @@
 
                         <!-- Form -->
                         <form action="<?= base_url('auth_login/cek_login_siswa') ?>" method="post">
+                            <?= csrf_field() ?>
                             <div class="mb-3">
                                 <label for="login_siswa" class="form-label">Email or NIS</label>
                                 <div class="input-group">

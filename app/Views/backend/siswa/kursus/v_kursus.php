@@ -30,14 +30,17 @@
                             <!-- Course Image -->
                             <div class="position-relative">
                                 <?php if (!empty($item['gambar_detail_a'])): ?>
-                                    <img src="<?= base_url('kursus/materi/' . ($item['gambar_detail_a'] ?? 'as.png')) ?>"
+                                    <img src="<?= base_url('kursus/materi/' . $item['gambar_detail_a']) ?>"
                                         class="img-fluid rounded"
                                         alt="<?= $item['nama_kursus'] ?>"
+                                        style="height: 200px; object-fit: cover; width: 100%;"
                                         onerror="this.src='<?= base_url('kursus/materi/as.png') ?>'">
                                 <?php elseif (!empty($item['gambar_utama'])): ?>
-                                    <img src="<?= base_url('kursus/materi/' . ($item['gambar_utama'] ?? 'as.png')) ?>"
-                                        class="card-img-top" alt="Gambar Kursus"
-                                        style="height: 200px; object-fit: cover; width: 100%;">
+                                    <img src="<?= base_url('kursus/materi/' . $item['gambar_utama']) ?>"
+                                        class="img-fluid rounded"
+                                        alt="<?= $item['nama_kursus'] ?>"
+                                        style="height: 200px; object-fit: cover; width: 100%;"
+                                        onerror="this.src='<?= base_url('kursus/materi/as.png') ?>'">
                                 <?php else: ?>
                                     <div class="card-img-top d-flex align-items-center justify-content-center bg-light"
                                         style="height: 200px;">
@@ -47,9 +50,34 @@
 
                                 <!-- Status Badge -->
                                 <div class="position-absolute top-0 end-0 p-3">
-                                    <span class="badge <?= $item['status'] == 'aktif' ? 'bg-success' : 'bg-danger' ?> rounded-pill">
+                                    <?php
+                                    // Logic untuk status badge
+                                    $statusBadge = 'bg-danger';
+                                    $statusText = 'Nonaktif';
+                                    
+                                    // Cek apakah pembayaran success
+                                    if (isset($item['status_pembayaran']) && $item['status_pembayaran'] === 'success') {
+                                        $statusBadge = 'bg-success';
+                                        $statusText = 'Aktif';
+                                    }
+                                    
+                                    // Khusus untuk "Rahasia surat massal & Daftar isi otomatis" - selalu aktif
+                                    if (strpos(strtolower($item['nama_kursus'] ?? ''), 'rahasia surat massal') !== false) {
+                                        $statusBadge = 'bg-success';
+                                        $statusText = 'Aktif';
+                                    }
+                                    
+                                    // Khusus untuk "Menyusun surat dengan MS Word untuk sekretaris" - cek status
+                                    if (strpos(strtolower($item['nama_kursus'] ?? ''), 'menyusun surat dengan ms word') !== false) {
+                                        if (isset($item['status_pembayaran']) && $item['status_pembayaran'] === 'pending') {
+                                            $statusBadge = 'bg-warning';
+                                            $statusText = 'Pending';
+                                        }
+                                    }
+                                    ?>
+                                    <span class="badge <?= $statusBadge ?> rounded-pill">
                                         <i class="fas fa-circle me-1" style="font-size: 6px;"></i>
-                                        <?= $item['status'] == 'aktif' ? 'Aktif' : 'Nonaktif' ?>
+                                        <?= $statusText ?>
                                     </span>
                                 </div>
                             </div>
@@ -60,49 +88,91 @@
                                     <?= esc($item['nama_kursus'] ?? 'Tidak ada judul') ?>
                                 </h5>
 
-                                <div class="mb-3">
-                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">
-                                        <i class="fas fa-tag me-1"></i>
-                                        <?= esc($item['nama_program'] ?? 'Program') ?>
-                                    </span>
-                                </div>
-
                                 <!-- Course Details -->
                                 <div class="mb-3">
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <small class="text-muted">
-                                            <i class="fas fa-list me-1"></i> <?= esc($item['nama_program'] ?? '–') ?>
-                                        </small>
-                                        <small class="text-muted">
+                                    <!-- Learning Content -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3 text-primary">
+                                            <i class="fas fa-book fa-2x"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 fw-bold">Materi Yang Dipelajari</h6>
+                                            <small class="text-muted">Konten pembelajaran utama</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Quiz Section -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3 text-warning">
+                                            <i class="fas fa-clipboard-list fa-2x"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 fw-bold">Quiz</h6>
+                                            <small class="text-muted"><?= esc($item['jumlah_quiz'] ?? '0') ?> Quiz Tersedia</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Course Info -->
+                                    <div class="row g-2 text-muted small">
+                                        <div class="col-6">
                                             <i class="fas fa-user me-1"></i> <?= esc($item['nama_instruktur'] ?? '–') ?>
-                                        </small>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <small class="text-muted">
+                                        </div>
+                                        <div class="col-6">
+                                            <i class="fas fa-clock me-1"></i> <?= esc($item['total_pertemuan'] ?? '0') ?> Pertemuan
+                                        </div>
+                                        <div class="col-6">
                                             <i class="fas fa-box me-1"></i> <?= esc($item['nama_paket'] ?? '–') ?>
-                                        </small>
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle me-1"></i> <?= esc(ucfirst($item['jenis_kursus'] ?? '')) ?>
-                                        </small>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <small class="text-muted">
-                                            <i class="fas fa-clock me-1"></i> <?= esc($item['total_pertemuan'] ?? '') ?> x
-                                        </small>
+                                        </div>
+                                        <div class="col-6">
+                                            <i class="fas fa-tag me-1"></i> <?= esc(ucfirst($item['jenis_kursus'] ?? '')) ?>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- Action Buttons -->
                                 <div class="mt-auto">
                                     <div class="d-grid gap-2">
-                                        <a href="<?= base_url('home_siswa/detail_kursus/' . $item['id_kursus']) ?>"
+                                        <a href="<?= base_url('home_siswa/kursus/detail/' . $item['id_kursus']) ?>"
                                             class="btn btn-outline-primary btn-sm rounded-pill">
                                             <i class="fas fa-eye me-1"></i> Lihat Detail
                                         </a>
-                                        <a href="<?= base_url('home_siswa/belajar/' . ($item['id_pendaftaran'] ?? $item['id_kursus'])) ?>"
-                                            class="btn btn-success btn-sm rounded-pill">
-                                            <i class="fas fa-play me-1"></i> Mulai Belajar
-                                        </a>
+                                        <?php
+                                        // Logic untuk tombol Mulai Belajar
+                                        $disableButton = false;
+                                        $buttonClass = 'btn-success';
+                                        $buttonText = 'Mulai Belajar';
+                                        $buttonLink = base_url('home_siswa/belajar/' . ($item['id_pendaftaran'] ?? $item['id_kursus']));
+                                        
+                                        // Khusus untuk "Menyusun surat dengan MS Word untuk sekretaris" - cek status pembayaran
+                                        if (strpos(strtolower($item['nama_kursus'] ?? ''), 'menyusun surat dengan ms word') !== false) {
+                                            if (isset($item['status_pembayaran']) && $item['status_pembayaran'] === 'pending') {
+                                                $disableButton = true;
+                                                $buttonClass = 'btn-secondary';
+                                                $buttonText = 'Pending - Menunggu Pembayaran';
+                                                $buttonLink = '#';
+                                            }
+                                        }
+                                        
+                                        // Jika status pembayaran tidak success, disable tombol
+                                        if (isset($item['status_pembayaran']) && $item['status_pembayaran'] !== 'success') {
+                                            // Kecuali untuk "Rahasia surat massal & Daftar isi otomatis" yang selalu aktif
+                                            if (strpos(strtolower($item['nama_kursus'] ?? ''), 'rahasia surat massal') === false) {
+                                                $disableButton = true;
+                                                $buttonClass = 'btn-secondary';
+                                                $buttonText = 'Menunggu Pembayaran';
+                                                $buttonLink = '#';
+                                            }
+                                        }
+                                        ?>
+                                        <?php if ($disableButton): ?>
+                                            <button class="btn <?= $buttonClass ?> btn-sm rounded-pill" disabled>
+                                                <i class="fas fa-clock me-1"></i> <?= $buttonText ?>
+                                            </button>
+                                        <?php else: ?>
+                                            <a href="<?= $buttonLink ?>" class="btn <?= $buttonClass ?> btn-sm rounded-pill">
+                                                <i class="fas fa-play me-1"></i> <?= $buttonText ?>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -134,7 +204,7 @@
 
     .hover-lift:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
     }
 
     .card-img-top {
@@ -151,6 +221,26 @@
 
     .btn:hover {
         transform: translateY(-2px);
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+        
+        .fa-2x {
+            font-size: 1.5rem !important;
+        }
+        
+        .display-5 {
+            font-size: 2rem !important;
+        }
+    }
+    
+    /* Better spacing for course info */
+    .row.g-2 > div {
+        padding: 0.25rem 0;
     }
 </style>
 

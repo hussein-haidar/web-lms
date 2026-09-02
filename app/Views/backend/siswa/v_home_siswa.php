@@ -26,6 +26,7 @@
 <!-- Hero Banner Slider -->
 <div class="container-fluid py-5">
     <div class="container position-relative">
+            
         <div id="bannerSlider" class="carousel slide" data-bs-ride="carousel">
             <div class="carousel-indicators">
                 <?php if (!empty($sliders)): ?>
@@ -49,8 +50,14 @@
                                 </div>
                                 <div class="col-md-6 text-center order-1 order-md-2 mb-4 mb-md-0">
                                     <?php 
-                                    $imagePath = 'slider/' . $s['gambar_slider'];
-                                    $defaultImage = \App\Models\M_slider::DEFAULT_IMAGE;
+                                    $imagePath = 'uploads/slider_promo/' . $s['gambar_slider'];
+                                    $defaultImage = \App\Models\M_slider_promo::DEFAULT_IMAGE;
+                                    
+                                    echo '<!-- DEBUG: gambar_slider = ' . $s['gambar_slider'] . ' -->';
+                                    echo '<!-- DEBUG: imagePath = ' . $imagePath . ' -->';
+                                    echo '<!-- DEBUG: defaultImage = ' . $defaultImage . ' -->';
+                                    echo '<!-- DEBUG: FCPATH = ' . FCPATH . ' -->';
+                                    echo '<!-- DEBUG: file_exists = ' . (file_exists(FCPATH . $imagePath) ? 'true' : 'false') . ' -->';
                                     
                                     // Check if file exists and is not default
                                     if (!empty($s['gambar_slider']) && $s['gambar_slider'] !== $defaultImage && file_exists(FCPATH . $imagePath)) {
@@ -70,10 +77,10 @@
                             <div class="col-md-6 order-2 order-md-1">
                                 <h2 class="mb-3 text-white fw-bold">Selamat Datang di LPK INASADA</h2>
                                 <p class="mb-4 text-white-50 opacity-75">Tingkatkan keahlianmu dengan kursus online terbaik kami.</p>
-                                <a href="<?= base_url('home_siswa/v_kursus') ?>" class="btn btn-light btn-lg text-primary fw-bold px-4 rounded-pill">Lihat Kursus</a>
+                                <a href="<?= base_url('home_siswa/kursus_saya') ?>" class="btn btn-light btn-lg text-primary fw-bold px-4 rounded-pill">Lihat Kursus</a>
                             </div>
                             <div class="col-md-6 text-center order-1 order-md-2 mb-4 mb-md-0">
-                                <img src="<?= base_url('assets/img/' . \App\Models\M_slider::DEFAULT_HERO) ?>" alt="Default Hero" class="img-fluid rounded-3">
+                                <img src="<?= base_url('assets/img/' . \App\Models\M_slider_promo::DEFAULT_HERO) ?>" alt="Default Hero" class="img-fluid rounded-3">
                             </div>
                         </div>
                     </div>
@@ -88,7 +95,7 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0 fw-bold">Let's start learning</h4>
-        <a href="<?= base_url('home_siswa/v_kursus') ?>" class="btn btn-link fw-bold text-decoration-none">My learning <i class="fas fa-chevron-right ms-1"></i></a>
+        <a href="<?= base_url('home_siswa/kursus_saya') ?>" class="btn btn-link fw-bold text-decoration-none">My learning <i class="fas fa-chevron-right ms-1"></i></a>
     </div>
     <div class="row">
         <?php if (!empty($enrolled)): ?>
@@ -198,7 +205,7 @@
         <?php else: ?>
             <div class="col-12 text-center py-4">
                 <div class="alert alert-info border-0 shadow-sm rounded-3">
-                    <i class="fas fa-info-circle me-2"></i> Anda belum memiliki kursus aktif. <a href="<?= base_url('home_website/store') ?>" class="alert-link">Mulai berlangganan sekarang!</a>
+                    <i class="fas fa-info-circle me-2"></i> Anda belum memiliki kursus aktif. <a href="<?= base_url('home_website/kls_online') ?>" class="alert-link">Mulai berlangganan sekarang!</a>
                 </div>
             </div>
         <?php endif; ?>

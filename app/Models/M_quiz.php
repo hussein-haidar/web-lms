@@ -28,13 +28,17 @@ class M_quiz extends Model
     // ✅ Get quiz aktif untuk kursus tertentu
     public function getQuizAktif($id_kursus, $id_modul = 0)
     {
-        return $this->db->table($this->table)
+        $builder = $this->db->table($this->table)
             ->where('id_kursus', $id_kursus)
-            ->where('id_modul', $id_modul)
             ->where('status', 'aktif')
-            ->where('tanggal_mulai <=', date('Y-m-d H:i:s'))
-            ->groupBy('id_modul')
-            ->orderBy('id_modul', 'ASC')
+            ->where('tanggal_mulai <=', date('Y-m-d H:i:s'));
+            
+        // Only filter by id_modul if it's provided and not 0
+        if ($id_modul > 0) {
+            $builder->where('id_modul', $id_modul);
+        }
+        
+        return $builder->orderBy('created_at', 'ASC')
             ->get()
             ->getResultArray();
     }
@@ -83,31 +87,84 @@ class M_quiz extends Model
         return true;
     }
 
-    // ✅ Hitung nilai otomatis dari jawaban siswa
+    // ✅ Hitung nilai otomatis dari jawaban siswa (supports multiple question types)
     public function hitungNilai($soal_json, $jawaban_siswa)
     {
         $soal = json_decode($soal_json, true);
-        $total_benar = 0;
-        $total_soal = count($soal);
+        $total_bobot = 0;
+        $total_skor = 0;
 
         foreach ($soal as $index => $s) {
-            // Cari jawaban siswa untuk soal ini berdasarkan index
-            $j = array_filter($jawaban_siswa, fn($x) => $x['soal_id'] == $index);
+            $soal_id = $s['id_soal'] ?? ($index + 1);
+            $bobot = $s['bobot'] ?? 1;
+            $tipe = $s['tipe_soal'] ?? 'pilihan_ganda';
+
+            // Cari jawaban siswa
+            $j = array_filter($jawaban_siswa, fn($x) => $x['soal_id'] == $soal_id);
             $j = reset($j);
-            
-            if ($j && $j['jawaban'] == $s['jawaban_benar']) {
-                $total_benar++;
+
+            $jawaban_siswa_val = $j['jawaban'] ?? '';
+            $jawaban_benar = $s['jawaban_benar'] ?? '';
+
+            $is_benar = false;
+
+            switch ($tipe) {
+                case 'pilihan_ganda':
+                case 'true_false':
+                    $siswa_huruf = '';
+                    if (is_numeric($jawaban_siswa_val)) {
+                        $idx = (int)$jawaban_siswa_val;
+                        $siswa_huruf = chr(65 + $idx);
+                    } else {
+                        $siswa_huruf = strtoupper(trim($jawaban_siswa_val));
+                    }
+                    $is_benar = ($siswa_huruf === strtoupper(trim($jawaban_benar)));
+                    break;
+
+                case 'fill_blank':
+                    $is_benar = (strtolower(trim($jawaban_siswa_val)) === strtolower(trim($jawaban_benar)));
+                    break;
+
+                case 'essay':
+                    // Essay dinilai manual, berikan 0 dulu (nanti dinilai manual)
+                    $is_benar = false;
+                    break;
+
+                case 'matching':
+                    $siswa_pairs = is_array($jawaban_siswa_val) ? $jawaban_siswa_val : json_decode($jawaban_siswa_val, true);
+                    $benar_pairs = json_decode($jawaban_benar, true);
+                    if ($siswa_pairs && $benar_pairs) {
+                        $correct_count = 0;
+                        foreach ($benar_pairs as $key => $val) {
+                            if (isset($siswa_pairs[$key]) && $siswa_pairs[$key] === $val) {
+                                $correct_count++;
+                            }
+                        }
+                        $match_ratio = count($benar_pairs) > 0 ? $correct_count / count($benar_pairs) : 0;
+                        $total_skor += $bobot * $match_ratio;
+                    }
+                    $total_bobot += $bobot;
+                    continue 2;
+
+                default:
+                    $is_benar = ($jawaban_siswa_val === $jawaban_benar);
             }
+
+            if ($is_benar) {
+                $total_skor += $bobot;
+            }
+            $total_bobot += $bobot;
         }
 
-        // Perbaikan: Hitung persentase, bukan jumlah bobot
-        $total_nilai = $total_soal > 0 ? round(($total_benar / $total_soal) * 100, 2) : 0;
+        $total_nilai = $total_bobot > 0 ? round(($total_skor / $total_bobot) * 100, 2) : 0;
+        $total_soal = count($soal);
+        $total_benar = (int) round($total_skor);
 
         return [
             'total_nilai' => $total_nilai,
             'total_benar' => $total_benar,
             'total_salah' => $total_soal - $total_benar,
-            'total_soal' => $total_soal  // Tambahkan total soal
+            'total_soal' => $total_soal
         ];
     }
 
@@ -181,6 +238,32 @@ class M_quiz extends Model
             ->getRowArray();
 
         return $stats;
+    }
+
+    // ✅ Create quiz from bank soal IDs
+    public function createQuizFromBank(array $data, array $bankSoalIds)
+    {
+        $bankSoalModel = new \App\Models\M_bank_soal();
+        $soalFromBank = $bankSoalModel->getSoalByIds($bankSoalIds);
+
+        $soalArray = [];
+        foreach ($soalFromBank as $idx => $soal) {
+            $soalArray[] = [
+                'id_soal'        => $soal['id_soal'],
+                'tipe_soal'      => $soal['tipe_soal'],
+                'pertanyaan'     => $soal['pertanyaan'],
+                'pilihan'        => json_decode($soal['pilihan'], true),
+                'jawaban_benar'  => $soal['jawaban_benar'],
+                'pilihan_pair'   => json_decode($soal['pilihan_pair'], true),
+                'bobot'          => $soal['bobot'],
+                'penjelasan'     => $soal['penjelasan'],
+            ];
+        }
+
+        $data['soal_json'] = json_encode($soalArray);
+        $data['soal_source'] = 'bank';
+
+        return $this->insert($data);
     }
 
     public function getQuizByKursusWithDetails($id_karyawan)

@@ -37,7 +37,19 @@ class M_paket extends Model
             ->join('program_kursus', 'program_kursus.id_program = kursus.id_program', 'left')
             ->find($id_paket);
     }
-// ✅ GET PAKET DENGAN FILTER - Mapping "Program kursus singkat" ke "Kelas Offline"
+
+    // ✅ GET PAKET WITH KURSUS
+    public function getPaketWithKursus()
+    {
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, k.nama_kursus')
+            ->join('kursus k', 'p.id_kursus = k.id_kursus', 'left')
+            ->orderBy('p.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+// ✅ GET PAKET DENGAN FILTER
     public function get_paket(array $filters = [], array $filterConfig = [])
     {
         $builder = $this->get_paket_builder($filters, $filterConfig);
@@ -59,32 +71,14 @@ class M_paket extends Model
             
             $filterValue = strtolower(trim($val));
             
-            // ✅ LOGICA KHUSUS: Mapping "Program kursus singkat" → "Kelas Offline"
-            if ($filterValue === 'program kursus singkat') {
-                // Tampilkan data dari program "Kelas Offline"
-                $builder->where("LOWER(pr.nama_program)", 'kelas offline');
-            } elseif ($filterValue === 'kelas online') {
-                // Jika filter "Kelas Online", hanya tampilkan Paket A
-                $builder->where("LOWER(pr.nama_program)", 'kelas online')
-                        ->where("LOWER(pk.paket_a) IS NOT NULL")
-                        ->where("LOWER(pk.paket_b) IS NOT NULL")
-                        ->where("LOWER(pk.paket_c) IS NOT NULL");
-                // Tambahkan kondisi untuk hanya menampilkan paket yang relevan untuk kelas online
-                $builder->where("(pk.paket_a != '' OR pk.paket_a IS NOT NULL)");
-            } elseif ($filterValue === 'profesi 1 tahun') {
-                // Jika filter "Profesi 1 Tahun", hanya tampilkan Paket A
-                $builder->where("LOWER(pr.nama_program)", 'profesi 1 tahun')
-                        ->where("(pk.paket_a != '' OR pk.paket_a IS NOT NULL)");
+            // Filter normal untuk semua pilihan
+            $cfg = $filterConfig[$key];
+            $field = "{$cfg['table_alias']}.{$cfg['column']}";
+            
+            if ($cfg['type'] === 'like') {
+                $builder->like("LOWER({$field})", strtolower($val), 'both');
             } else {
-                // Filter normal untuk pilihan lain
-                $cfg = $filterConfig[$key];
-                $field = "{$cfg['table_alias']}.{$cfg['column']}";
-                
-                if ($cfg['type'] === 'like') {
-                    $builder->like("LOWER({$field})", strtolower($val), 'both');
-                } else {
-                    $builder->where("LOWER({$field})", strtolower($val));
-                }
+                $builder->where("LOWER({$field})", strtolower($val));
             }
         }
 
@@ -118,5 +112,19 @@ class M_paket extends Model
     public function softDelete($id)
     {
         return $this->update($id, ['deleted_at' => date('Y-m-d H:i:s')]);
+    }
+
+    // Restore soft deleted paket
+    public function restore($id_paket)
+    {
+        return $this->update($id_paket, ['deleted_at' => null]);
+    }
+
+    // Get deleted paket (for restore functionality)
+    public function onlyDeleted()
+    {
+        return $this->where('deleted_at IS NOT NULL')
+                   ->orderBy('deleted_at', 'DESC')
+                   ->findAll();
     }
 }

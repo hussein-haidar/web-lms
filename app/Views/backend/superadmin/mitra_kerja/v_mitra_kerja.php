@@ -51,7 +51,7 @@
                                     <td><?= $no++ ?></td>
                                     <td>
                                         <?php if (!empty($item['logo_mitra'])): ?>
-                                            <img src="<?= base_url('slider/' . $item['logo_mitra']) ?>" 
+                                            <img src="<?= base_url('uploads/mitra_kerja/' . $item['logo_mitra']) ?>" 
                                                  alt="<?= esc($item['nama_mitra']) ?>" 
                                                  style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius:5px;">
                                         <?php else: ?>

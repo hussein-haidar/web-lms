@@ -12,7 +12,7 @@ class M_pembayaran extends Model
         'kode_invoice',
         'kode_transaksi',
         'jumlah_bayar',
-            'metode_pembayaran',  // transfer_bank/ewallet/qris/tunai
+        'metode_pembayaran',  // transfer_bank/ewallet/qris/tunai
         'bank_tujuan',
         'no_rekening_pengirim',
         'nama_pengirim',
@@ -21,7 +21,7 @@ class M_pembayaran extends Model
         'tanggal_transaksi',
         'tanggal_konfirmasi',
         'dikonfirmasi_oleh',     // id_karyawan yang konfirmasi
-           'alasan_penolakan',
+        'alasan_penolakan',
         'refund_amount',
     ];
     protected $useTimestamps = true;
@@ -72,15 +72,29 @@ class M_pembayaran extends Model
         return $builder->orderBy('pembayaran.tanggal_transaksi', 'DESC')->get()->getResultArray();
     }
 
+    // ✅ Get pembayaran dengan detail lengkap
+    public function getPaymentWithDetails($id_pembayaran)
+    {
+        return $this->db->table($this->table)
+            ->select('pembayaran.*, siswa.nama_lengkap, siswa.email, kursus.nama_kursus')
+            ->join('pendaftaran', 'pendaftaran.kode_invoice = pembayaran.kode_invoice', 'left')
+            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa', 'left')
+            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus', 'left')
+            ->where('pembayaran.id_pembayaran', $id_pembayaran)
+            ->get()
+            ->getRowArray();
+    }
+
     // ✅ Get pembayaran pending untuk admin
     public function getPendingPayments()
     {
         return $this->db->table($this->table)
             ->select('pembayaran.*, siswa.nama_lengkap, siswa.email, siswa.no_telepon, kursus.nama_kursus')
-            ->join('pendaftaran', 'pendaftaran.kode_invoice = pembayaran.kode_invoice')
-            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa')
-            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus')
+            ->join('pendaftaran', 'pendaftaran.kode_invoice = pembayaran.kode_invoice', 'left')
+            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa', 'left')
+            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus', 'left')
             ->where('pembayaran.status_pembayaran', 'pending')
+            ->groupBy('pembayaran.id_pembayaran')
             ->orderBy('pembayaran.tanggal_transaksi', 'ASC')
             ->get()
             ->getResultArray();
@@ -119,5 +133,59 @@ class M_pembayaran extends Model
             'dikonfirmasi_oleh' => $adminId,
             'alasan_penolakan' => $alasan
         ]);
+    }
+
+    // ✅ CLEANUP DATA EXPIRED (auto delete)
+    public function cleanupExpired()
+    {
+        $db = \Config\Database::connect();
+        $dua_jam_lalu = date('Y-m-d H:i:s', strtotime('-2 hours'));
+
+        // Hapus pembayaran pending lebih dari 2 jam
+        return $db->table($this->table)
+            ->where('status_pembayaran', 'pending')
+            ->where('tanggal_transaksi <', $dua_jam_lalu)
+            ->delete();
+    }
+
+    // ✅ GET ALL PEMBAYARAN
+    public function getPembayaranAll()
+    {
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, k.nama_kursus')
+                      ->join('pendaftaran pd', 'p.kode_invoice = pd.kode_invoice', 'left')
+            ->join('kursus k', 'pd.id_kursus = k.id_kursus', 'left')
+            ->orderBy('p.tanggal_transaksi', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+    // ✅ GET NOTIFIKASI PEMBAYARAN
+    public function get_notifikasi_pembayaran($id_siswa = null, $limit = 10, $status = null)
+    {
+        $builder = $this->db->table($this->table . ' p')
+            ->select('p.*, s.nama_lengkap, k.nama_kursus')
+            ->join('pendaftaran pd', 'p.kode_invoice = pd.kode_invoice', 'left')
+            ->join('siswa s', 'pd.id_siswa = s.id_siswa', 'left')
+            ->join('kursus k', 'pd.id_kursus = k.id_kursus', 'left')
+            ->groupBy('p.id_pembayaran')
+            ->orderBy('p.tanggal_transaksi', 'DESC');
+
+        if ($id_siswa) {
+            $builder->where('pd.id_siswa', $id_siswa);
+        }
+
+        // Default filter: hanya tampilkan pending dan failed
+        if ($status === null) {
+            $builder->whereIn('p.status_pembayaran', ['pending', 'failed']);
+        } elseif ($status) {
+            if (is_array($status)) {
+                $builder->whereIn('p.status_pembayaran', $status);
+            } else {
+                $builder->where('p.status_pembayaran', $status);
+            }
+        }
+
+        return $builder->limit($limit)->get()->getResultArray();
     }
 }

@@ -48,7 +48,7 @@
                                         <?php foreach ($m['materi'] as $mat): ?>
                                             <?php if ($mat['tipe_materi'] == 'quiz'): ?>
                                                 <!-- Quiz Item - Special handling for quiz materi -->
-                                                <a href="<?= base_url('home_siswa/belajar/' . $pendaftaran['id_pendaftaran'] . '/' . $mat['id_materi']) ?>"
+                                                <a href="<?= base_url('home_siswa/quiz/kerjakan/' . $mat['id_quiz']) ?>"
                                                     style="display: block; padding: 0.75rem; text-decoration: none; color: #495057; background: <?= $materi_aktif && $materi_aktif['id_materi'] == $mat['id_materi'] ? '#007bff' : 'transparent' ?>; <?= $materi_aktif && $materi_aktif['id_materi'] == $mat['id_materi'] ? 'color: white;' : '' ?> border-bottom: 1px solid #dee2e6; transition: background-color 0.3s ease;">
                                                     <div style="display: flex; align-items: center;">
                                                         <div style="margin-right: 0.75rem;">
@@ -92,48 +92,25 @@
                                                 </a>
                                             <?php else: ?>
                                                 <!-- Regular Materi Item -->
+                                                <!-- Non-quiz materi - use belajar route -->
                                                 <a href="<?= base_url('home_siswa/belajar/' . $pendaftaran['id_pendaftaran'] . '/' . $mat['id_materi']) ?>"
-                                                    style="display: block; padding: 0.75rem; text-decoration: none; color: #495057; background: <?= $materi_aktif && $materi_aktif['id_materi'] == $mat['id_materi'] ? '#007bff' : 'transparent' ?>; <?= $materi_aktif && $materi_aktif['id_materi'] == $mat['id_materi'] ? 'color: white;' : '' ?> border-bottom: 1px solid #dee2e6; transition: background-color 0.3s ease;">
-                                                    <div style="display: flex; align-items: center;">
-                                                        <div style="margin-right: 0.75rem;">
-                                                            <?php 
-                                                            $is_completed = false;
-                                                            
-                                                            // Check regular progress for materi
-                                                            if (isset($progres[$mat['id_materi']]) && $progres[$mat['id_materi']]['is_completed'] == 1) {
-                                                                $is_completed = true;
-                                                            }
-                                                            
-                                                            // For quiz items, check if already marked as completed in materi data
-                                                            if ($mat['tipe_materi'] == 'quiz' && isset($mat['is_completed']) && $mat['is_completed'] == 1) {
-                                                                $is_completed = true;
-                                                            }
-                                                            ?>
-                                                            
-                                                            <?php if ($is_completed): ?>
-                                                                <div style="color: #28a745;">
-                                                                    <i class="fas fa-check-circle" style="font-size: 1.25rem;"></i>
-                                                                </div>
-                                                            <?php else: ?>
-                                                                <div style="color: #6c757d;">
-                                                                    <i class="far fa-circle" style="font-size: 1.25rem;"></i>
-                                                                </div>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div style="flex: 1;">
-                                                            <div style="display: flex; align-items: center; margin-bottom: 0.25rem;">
-                                                                <i class="<?= $mat['tipe_materi'] == 'youtube' ? 'fab fa-youtube' : ($mat['tipe_materi'] == 'zoom' ? 'fas fa-video' : ($mat['tipe_materi'] == 'quiz' ? 'fas fa-question-circle' : 'fas fa-file-alt')) ?>" style="<?= $mat['tipe_materi'] == 'youtube' ? 'color: #dc3545' : ($mat['tipe_materi'] == 'zoom' ? 'color: #17a2b8' : ($mat['tipe_materi'] == 'quiz' ? 'color: #ffc107' : 'color: #6c757d')) ?>; margin-right: 0.5rem;"></i>
-                                                                <span><?= esc($mat['judul_materi']) ?></span>
+                                                        style="display: block; padding: 0.75rem; text-decoration: none; color: #495057; background: <?= $materi_aktif && $materi_aktif['id_materi'] == $mat['id_materi'] ? '#007bff' : 'transparent' ?>; <?= $materi_aktif && $materi_aktif['id_materi'] == $mat['id_materi'] ? 'color: white;' : '' ?> border-bottom: 1px solid #dee2e6; transition: background-color 0.3s ease;">
+                                                        <div style="display: flex; align-items: center;">
+                                                            <div style="margin-right: 0.75rem;">
+                                                                <?php 
+                                                                $is_completed = false;
+                                                                
+                                                                // Check regular progress for materi
+                                                                if (isset($progres[$mat['id_materi']]) && $progres[$mat['id_materi']]['is_completed'] == 1) {
+                                                                    $is_completed = true;
+                                                                }
+                                                                ?>
+                                                                <i class="fas <?= $is_completed ? 'fa-check-circle' : 'fa-circle' ?>" style="color: <?= $is_completed ? '#28a745' : '#6c757d' ?>; margin-right: 0.5rem;"></i>
+                                                                <span style="font-weight: 500;"><?= esc($mat['judul_materi']) ?></span>
                                                             </div>
-                                                            <?php if (isset($mat['durasi']) && $mat['durasi'] > 0): ?>
-                                                                <small style="color: #6c757d; margin-left: 1.75rem;">
-                                                                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>
-                                                                    <?= $mat['durasi'] ?> menit
-                                                                </small>
-                                                            <?php endif; ?>
+                                                            <i class="fas fa-chevron-right" style="color: #6c757d;"></i>
                                                         </div>
-                                                    </div>
-                                                </a>
+                                                    </a>
                                             <?php endif; ?>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -170,102 +147,173 @@
                         <!-- Video Content -->
                         <?php if ($materi_aktif['tipe_materi'] == 'youtube'): ?>
                             <?php 
-                            // Extract YouTube video ID from URL
-                            $youtube_url = $materi_aktif['url_youtube'] ?? '';
+                            // Extract YouTube video ID from url_youtube field
+                            $youtube_url = trim($materi_aktif['url_youtube'] ?? '');
                             $video_id = '';
                             
-                            if (strpos($youtube_url, 'youtube.com/watch?v=') !== false) {
-                                parse_str(parse_url($youtube_url, PHP_URL_QUERY), $query);
-                                $video_id = $query['v'] ?? '';
-                            } elseif (strpos($youtube_url, 'youtu.be/') !== false) {
-                                $video_id = substr($youtube_url, strpos($youtube_url, 'youtu.be/') + 9);
-                                $video_id = explode('?', $video_id)[0];
+                            // Enhanced URL parsing with regex for better accuracy
+                            if (!empty($youtube_url)) {
+                                // Pattern 1: youtube.com/watch?v=VIDEO_ID
+                                if (preg_match('/youtube\.com\/watch\?v=([^&\?#]+)/', $youtube_url, $matches)) {
+                                    $video_id = $matches[1];
+                                }
+                                // Pattern 2: youtu.be/VIDEO_ID
+                                elseif (preg_match('/youtu\.be\/([^&\?#]+)/', $youtube_url, $matches)) {
+                                    $video_id = $matches[1];
+                                }
+                                // Pattern 3: youtube.com/embed/VIDEO_ID
+                                elseif (preg_match('/youtube\.com\/embed\/([^&\?#]+)/', $youtube_url, $matches)) {
+                                    $video_id = $matches[1];
+                                }
+                                // Pattern 4: Just the video ID (fallback)
+                                elseif (preg_match('/^[a-zA-Z0-9_-]{11}$/', $youtube_url)) {
+                                    $video_id = $youtube_url;
+                                }
+                            }
+                            
+                            // Clean video ID (remove any remaining query parameters)
+                            if ($video_id) {
+                                $video_id = explode('&', $video_id)[0];
+                                $video_id = explode('#', $video_id)[0];
                             }
                             ?>
                             
-                            <?php if ($video_id): ?>
+                            <?php if (!empty($video_id) && strlen($video_id) === 11): ?>
+                                <!-- Video YouTube Valid -->
                                 <div class="video-container">
-                                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0.5rem;">
+                                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0.5rem; background: #000;">
                                         <iframe 
-                                            src="https://www.youtube.com/embed/<?= $video_id ?>?rel=0&modestbranding=1&autohide=1&showinfo=0&controls=1" 
+                                            src="https://www.youtube.com/embed/<?= $video_id ?>?rel=0&showinfo=0&controls=1&modestbranding=1" 
                                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
-                                            allowfullscreen>
+                                            frameborder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowfullscreen
+                                            referrerpolicy="no-referrer-when-downgrade">
                                         </iframe>
                                     </div>
                                     
-                                    <!-- Video Progress Tracking -->
-                                    <div id="videoProgress" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
+                                    <!-- Alternative Player (Fallback) -->
+                                    <div id="fallback-player" style="display: none; margin-top: 1rem;">
+                                        <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; text-align: center;">
+                                            <p style="margin-bottom: 1rem;">Video tidak dapat dimuat? Coba tautan alternatif:</p>
+                                            <a href="https://www.youtube.com/watch?v=<?= $video_id ?>" target="_blank" 
+                                               style="background: #dc3545; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; display: inline-block;">
+                                                <i class="fab fa-youtube" style="margin-right: 0.5rem;"></i> Tonton di YouTube
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Video Info -->
+                                    <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                            <span style="font-weight: 500;">Progress Video</span>
-                                            <span id="videoTime">00:00 / 00:00</span>
+                                            <span style="font-weight: 500;">
+                                                <i class="fab fa-youtube" style="color: #dc3545; margin-right: 0.5rem;"></i>
+                                                Video Pembelajaran
+                                            </span>
+                                            <small style="color: #6c757d;">Video ID: <?= $video_id ?></small>
                                         </div>
-                                        <div style="background: #e9ecef; border-radius: 0.25rem; height: 8px; margin-bottom: 1rem;">
-                                            <div id="progressBar" style="background: #007bff; height: 100%; width: 0%; border-radius: 0.25rem; transition: width 0.3s;"></div>
-                                        </div>
-                                        <div style="text-align: center;">
-                                            <button id="markVideoComplete" onclick="markVideoAsCompleted()" style="background: #28a745; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 1rem;">
-                                                <i class="fas fa-check-circle" style="margin-right: 0.5rem;"></i> Tandai Selesai Menonton
-                                            </button>
+                                        
+                                        <!-- Video Progress Tracking -->
+                                        <div id="videoProgress" style="margin-top: 1rem; padding: 1rem; background: white; border: 1px solid #dee2e6; border-radius: 0.5rem;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                                <span style="font-weight: 500;">Progress Video</span>
+                                                <span id="videoTime">00:00 / 00:00</span>
+                                            </div>
+                                            <div style="background: #e9ecef; border-radius: 0.25rem; height: 8px; margin-bottom: 1rem;">
+                                                <div id="progressBar" style="background: #007bff; height: 100%; width: 0%; border-radius: 0.25rem; transition: width 0.3s;"></div>
+                                            </div>
+                                            <div style="text-align: center;">
+                                                <button id="markVideoComplete" onclick="markVideoAsCompleted()" style="background: #28a745; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 1rem;">
+                                                    <i class="fas fa-check-circle" style="margin-right: 0.5rem;"></i> Tandai Selesai Menonton
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 
+                                <!-- Script untuk fallback dan tracking -->
                                 <script>
-                                // Video tracking
-                                let videoDuration = 0;
+                                // Cek apakah iframe dapat dimuat
+                                setTimeout(() => {
+                                    const iframe = document.querySelector('iframe[src*="youtube.com/embed"]');
+                                    if (iframe) {
+                                        // Tambahkan event listener untuk error handling
+                                        iframe.onerror = function() {
+                                            console.log('Iframe error, showing fallback');
+                                            document.getElementById('fallback-player').style.display = 'block';
+                                        };
+                                        
+                                        // Cek apakah iframe diblokir atau gagal dimuat
+                                        try {
+                                            // Test akses ke iframe
+                                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                                        } catch (e) {
+                                            console.log('Iframe blocked, showing fallback');
+                                            document.getElementById('fallback-player').style.display = 'block';
+                                        }
+                                    }
+                                }, 2000);
+                                
+                                // Fallback tracking tanpa YouTube API
+                                let videoDuration = 300; // Default 5 menit
                                 let currentTime = 0;
                                 let videoWatched = false;
                                 
-                                // Extract video duration from YouTube API (simplified)
-                                function onYouTubeIframeAPIReady() {
-                                    // This would normally use YouTube API, but for simplicity we'll track manually
-                                    trackVideoProgress();
-                                }
-                                
-                                function trackVideoProgress() {
-                                    // Update progress every second
-                                    setInterval(() => {
-                                        if (document.querySelector('iframe')) {
-                                            // In a real implementation, you'd use YouTube API to get actual time
-                                            currentTime += 1;
-                                            
-                                            // Update progress bar (simulated)
-                                            const progress = Math.min((currentTime / (videoDuration || 300)) * 100, 100);
-                                            document.getElementById('progressBar').style.width = progress + '%';
-                                            
-                                            // Update time display
-                                            const currentMinutes = Math.floor(currentTime / 60);
-                                            const currentSeconds = currentTime % 60;
-                                            const durationMinutes = Math.floor((videoDuration || 300) / 60);
-                                            const durationSeconds = (videoDuration || 300) % 60;
-                                            
-                                            document.getElementById('videoTime').textContent = 
+                                // Simulasi progress tracking
+                                function startProgressTracking() {
+                                    const interval = setInterval(() => {
+                                        currentTime += 1;
+                                        const progress = Math.min((currentTime / videoDuration) * 100, 100);
+                                        
+                                        // Update progress bar
+                                        const progressBar = document.getElementById('progressBar');
+                                        if (progressBar) {
+                                            progressBar.style.width = progress + '%';
+                                        }
+                                        
+                                        // Update time display
+                                        const currentMinutes = Math.floor(currentTime / 60);
+                                        const currentSeconds = currentTime % 60;
+                                        const durationMinutes = Math.floor(videoDuration / 60);
+                                        const durationSeconds = videoDuration % 60;
+                                        
+                                        const videoTime = document.getElementById('videoTime');
+                                        if (videoTime) {
+                                            videoTime.textContent = 
                                                 `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')} / ${durationMinutes.toString().padStart(2, '0')}:${durationSeconds.toString().padStart(2, '0')}`;
-                                            
-                                            // Auto-mark as complete if watched 80% or more
-                                            if (progress >= 80 && !videoWatched) {
-                                                videoWatched = true;
-                                                markVideoAsCompleted();
-                                            }
+                                        }
+                                        
+                                        // Auto-mark as complete jika 80% atau lebih
+                                        if (progress >= 80 && !videoWatched) {
+                                            videoWatched = true;
+                                            clearInterval(interval);
+                                            // Auto-mark setelah delay
+                                            setTimeout(() => markVideoAsCompleted(), 1000);
+                                        }
+                                        
+                                        // Stop jika sudah 100%
+                                        if (progress >= 100) {
+                                            clearInterval(interval);
                                         }
                                     }, 1000);
                                 }
                                 
+                                // Mulai tracking saat halaman dimuat
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    startProgressTracking();
+                                });
+                                
                                 function markVideoAsCompleted() {
-                                    console.log('Marking video as completed...');
-                                    console.log('Current time:', currentTime);
-                                    console.log('Pendaftaran ID:', <?= $pendaftaran['id_pendaftaran'] ?>);
-                                    console.log('Materi ID:', <?= $materi_aktif['id_materi'] ?? 0 ?>);
+                                    if (videoWatched) return;
                                     
                                     if (confirm('Apakah Anda yakin sudah menyelesaikan video ini?')) {
                                         const formData = new URLSearchParams({
+                                            '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
                                             id_pendaftaran: <?= $pendaftaran['id_pendaftaran'] ?>,
                                             id_materi: <?= $materi_aktif['id_materi'] ?? 0 ?>,
                                             last_position: Math.floor(currentTime),
                                             is_completed: 1
                                         });
-                                        
-                                        console.log('Form data:', formData.toString());
                                         
                                         fetch('<?= base_url('home_siswa/update_progres') ?>', {
                                             method: 'POST',
@@ -275,22 +323,12 @@
                                             },
                                             body: formData
                                         })
-                                        .then(response => {
-                                            console.log('Response status:', response.status);
-                                            console.log('Response headers:', response.headers);
-                                            return response.json();
-                                        })
+                                        .then(response => response.json())
                                         .then(data => {
-                                            console.log('Response data:', data);
                                             if (data.status === 'success') {
                                                 alert('Video telah ditandai sebagai selesai.');
-                                                console.log('Reloading page with cache bust...');
-                                                // Force reload with cache busting
-                                                const timestamp = new Date().getTime();
-                                                window.location.href = window.location.pathname + '?t=' + timestamp + '#' + window.location.hash;
-                                                window.location.reload(true);
+                                                window.location.reload();
                                             } else {
-                                                console.error('Update failed:', data);
                                                 alert('Gagal menandai video sebagai selesai: ' + (data.message || 'Unknown error'));
                                             }
                                         })
@@ -298,20 +336,26 @@
                                             console.error('Network error:', error);
                                             alert('Terjadi kesalahan jaringan: ' + error.message);
                                         });
-                                    } else {
-                                        console.log('User cancelled');
                                     }
                                 }
-                                
-                                // Start tracking when page loads
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    trackVideoProgress();
-                                });
                                 </script>
                                 
                             <?php else: ?>
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle"></i> URL YouTube tidak valid: <?= esc($youtube_url) ?>
+                                <!-- Tidak ada video YouTube valid, tampilkan pesan error -->
+                                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 0.625rem; padding: 1.5rem; text-align: center; margin-bottom: 1.5rem;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f39c12; margin-bottom: 1rem;"></i>
+                                    <h6 style="color: #856404; margin-bottom: 0.5rem;">Video YouTube Tidak Tersedia</h6>
+                                    <p style="color: #856404; margin: 0; font-size: 0.875rem;">
+                                        URL YouTube yang tersimpan tidak valid. Pastikan URL berformat:<br>
+                                        • https://www.youtube.com/watch?v=VIDEO_ID<br>
+                                        • https://youtu.be/VIDEO_ID<br>
+                                        • https://www.youtube.com/embed/VIDEO_ID
+                                    </p>
+                                    <?php if (!empty($youtube_url)): ?>
+                                        <div style="margin-top: 1rem; padding: 0.5rem; background: #f8f9fa; border-radius: 0.25rem;">
+                                            <small style="color: #6c757d; word-break: break-all;">URL saat ini: <?= esc($youtube_url) ?></small>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             <?php endif; ?>
 
@@ -371,7 +415,7 @@
                                     
                                     <?php if (!$quiz_hasil['is_lulus']): ?>
                                         <div style="margin-top: 1rem;">
-                                            <a href="<?= base_url('home_siswa/kerjakan/' . $quiz['id_quiz']) ?>" style="background: #ffc107; color: #212529; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; display: inline-block;">
+                                            <a href="<?= base_url('home_siswa/quiz/kerjakan/' . $quiz['id_quiz']) ?>" style="background: #ffc107; color: #212529; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.5rem; display: inline-block;">
                                                 <i class="fas fa-redo" style="margin-right: 0.5rem;"></i> Coba Lagi
                                             </a>
                                         </div>
@@ -387,6 +431,7 @@
 
                             <?php if (!$quiz_hasil || !$quiz_hasil['is_lulus']): ?>
                                 <form action="<?= base_url('home_siswa/quiz/submit') ?>" method="post">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="id_pendaftaran" value="<?= $pendaftaran['id_pendaftaran'] ?>">
                                     <input type="hidden" name="id_quiz" value="<?= $quiz['id_quiz'] ?? '' ?>">
                                     <input type="hidden" name="id_materi" value="<?= $materi_aktif['id_materi'] ?? '' ?>">
@@ -580,12 +625,13 @@
                                             'Content-Type': 'application/x-www-form-urlencoded',
                                             'X-Requested-With': 'XMLHttpRequest'
                                         },
-                                        body: new URLSearchParams({
-                                            id_pendaftaran: <?= $pendaftaran['id_pendaftaran'] ?>,
-                                            id_materi: <?= $materi_aktif['id_materi'] ?? 0 ?>,
-                                            last_position: Math.floor(readingProgress),
-                                            is_completed: 1
-                                        })
+                                    body: new URLSearchParams({
+                                        '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+                                        id_pendaftaran: <?= $pendaftaran['id_pendaftaran'] ?>,
+                                        id_materi: <?= $materi_aktif['id_materi'] ?? 0 ?>,
+                                        last_position: Math.floor(readingProgress),
+                                        is_completed: 1
+                                    })
                                     })
                                     .then(response => {
                                         console.log('Response status:', response.status);
@@ -642,6 +688,7 @@ function markAsCompleted() {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
+                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
                 id_pendaftaran: <?= $pendaftaran['id_pendaftaran'] ?>,
                 id_materi: <?= $materi_aktif['id_materi'] ?? 0 ?>,
                 last_position: 0,
@@ -930,14 +977,52 @@ function handleResponsiveLayout() {
 document.addEventListener('DOMContentLoaded', function() {
     handleResponsiveLayout();
     
-    // Force close all modules by default
+    // Find first module with materials and open it
+    const moduleButtons = document.querySelectorAll('button[onclick*="toggleModule"]');
+    let firstModuleWithMaterials = null;
+    
+    if (moduleButtons) {
+        for (let button of moduleButtons) {
+            const moduleId = button.getAttribute('onclick').match(/toggleModule\('([^']+)'/)[1];
+            const module = document.getElementById(moduleId);
+            
+            if (module) {
+                const materials = module.querySelectorAll('a, div[style*="background"]');
+                if (materials && materials.length > 0) {
+                    firstModuleWithMaterials = button;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (firstModuleWithMaterials) {
+        const moduleId = firstModuleWithMaterials.getAttribute('onclick').match(/toggleModule\('([^']+)'/)[1];
+        const activeModule = document.getElementById(moduleId);
+        const chevron = firstModuleWithMaterials.querySelector('.chevron-icon');
+        
+        if (activeModule) {
+            activeModule.style.display = 'block';
+        }
+        if (chevron) {
+            chevron.style.transform = 'rotate(180deg)';
+        }
+    }
+    
+    // Close all other modules
     document.querySelectorAll('[id^="module"]').forEach(module => {
-        module.style.display = 'none';
+        const moduleButton = module.previousElementSibling;
+        if (moduleButton && moduleButton !== firstModuleWithMaterials) {
+            module.style.display = 'none';
+        }
     });
     
-    // Reset all chevrons to down position
+    // Reset all chevrons to down position (except active)
     document.querySelectorAll('.chevron-icon').forEach(chevron => {
-        chevron.style.transform = 'rotate(0deg)';
+        const button = chevron.closest('button');
+        if (button !== firstModuleWithMaterials) {
+            chevron.style.transform = 'rotate(0deg)';
+        }
     });
 });
 window.addEventListener('resize', handleResponsiveLayout);

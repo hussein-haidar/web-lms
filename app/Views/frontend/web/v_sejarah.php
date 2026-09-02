@@ -1,6 +1,21 @@
 <?= $this->extend('frontend/template_web/main') ?>
 <?= $this->section('content') ?>
 
+
+<!-- === HEADER SECTION === -->
+<section class="py-4" style="background: linear-gradient(135deg, #0056b3 0%, #00b4d8 100%);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="text-white fw-bold mb-2" style="font-size: 2.2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
+                    <?= (!empty($profil) && isset($profil['judul_header'])) ? $profil['judul_header'] : 'Sejarah LPK INASABA' ?>
+                </h2>
+                <p class="text-white-50 mb-0"><?= (!empty($profil) && isset($profil['subjudul_header'])) ? $profil['subjudul_header'] : 'Berikut adalah sejarah berdirinya LPK INASABA' ?></p>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- === HERO SECTION (BIRU GRADIENT SAMA DENGAN NAVBAR) === -->
 <section class="py-5 text-center" style="background: linear-gradient(to right, #0056b3, #00b4d8);">
     <div class="container py-5">
@@ -10,42 +25,52 @@
                 <div class="card shadow-lg border-0 rounded-3">
                     <div class="card-body p-4">
                         <div class="ratio ratio-16x9 rounded overflow-hidden shadow-sm">
-                            <!-- Ganti dengan video resmi LPK INASABA -->
-                            <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                                title="Profil LPK INASABA"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
+                            <?php if (!empty($profil) && isset($profil['video_url'])): ?>
+                                <iframe src="<?= $profil['video_url'] ?>"
+                                    title="<?= (!empty($profil) && isset($profil['video_title'])) ? $profil['video_title'] : 'Profil LPK INASABA' ?>"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen></iframe>
+                            <?php else: ?>
+                                <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                                    title="Profil LPK INASABA"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen></iframe>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
             </div>
 
- <!-- Sejarah Singkat -->
-<div class="col-lg-6">
-    <div class="card shadow-lg border-0 rounded-3">
-        <div class="card-body p-4">
-            <!-- Heading dengan border kiri tebal -->
-            <h3 class="text-success mb-4 pb-2 border-start border-4 border-success ps-3 fw-bold">
-                <i class="fas fa-history me-2"></i>Sejarah Singkat LPK INASABA
-            </h3>
-            <p class="text-start">
-                Cikal bakal LPK INASABA bermula dari pendirian sebuah warnet pada tahun <strong>2000</strong> dengan memiliki peralatan sebanyak: 5 unit komputer...
-            </p>
-            <p class="text-start">
-                Melihat perkembangan akan warnet dan semakin banyaknya pula permintaan kursus privat pada saat itu, muncul ide untuk membuka kursus kecil-kecilan...
-            </p>
-            <p class="text-start">
-                Dengan berbekal keberanian, tekad dan keseriusan yang tinggi, maka usaha membesarkan kegiatan kursus ini dilakukan... Sehingga sejak tanggal <strong>1 November 2001</strong> resmi Lembaga Pelatihan Komputer (INASABA) berdiri...
-            </p>
-            <p class="text-start">
-                Pada tanggal <strong>25 Oktober 2007</strong>, LPK INASABA juga telah memiliki ijin operasional dari Disnaker Kota Pekalongan...
-            </p>
-            <p class="text-start">
-                LPK INASABA kini sudah memiliki sarana dan prasarana yang memadai, serta status <strong>Terakreditasi</strong> oleh Badan Akreditasi Nasional...
-            </p>
-        </div>
-    </div>
-</div>
+            <!-- Sejarah Singkat -->
+            <div class="col-lg-6">
+                <div class="card shadow-lg border-0 rounded-3">
+                    <div class="card-body p-4">
+                        <!-- Heading dengan border kiri tebal -->
+                        <h3 class="text-success mb-4 pb-2 border-start border-4 border-success ps-3 fw-bold">
+                            <i class="fas fa-history me-2"></i>Sejarah Singkat LPK INASABA
+                        </h3>
+                        <?php if (!empty($profil) && isset($profil['sejarah_singkat'])): ?>
+                            <p class="text-start"><?= nl2br($profil['sejarah_singkat']) ?></p>
+                        <?php else: ?>
+                            <p class="text-start">
+                                Cikal bakal LPK INASABA bermula dari pendirian sebuah warnet pada tahun <strong>2000</strong> dengan memiliki peralatan sebanyak: 5 unit komputer...
+                            </p>
+                            <p class="text-start">
+                                Melihat perkembangan akan warnet dan semakin banyaknya pula permintaan kursus privat pada saat itu, muncul ide untuk membuka kursus kecil-kecilan...
+                            </p>
+                            <p class="text-start">
+                                Dengan berbekal keberanian, tekad dan keseriusan yang tinggi, maka usaha membesarkan kegiatan kursus ini dilakukan... Sehingga sejak tanggal <strong>1 November 2001</strong> resmi Lembaga Pelatihan Komputer (INASABA) berdiri...
+                            </p>
+                            <p class="text-start">
+                                Pada tanggal <strong>25 Oktober 2007</strong>, LPK INASABA juga telah memiliki ijin operasional dari Disnaker Kota Pekalongan...
+                            </p>
+                            <p class="text-start">
+                                LPK INASABA kini sudah memiliki sarana dan prasarana yang memadai, serta status <strong>Terakreditasi</strong> oleh Badan Akreditasi Nasional...
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -72,9 +97,15 @@
                                 <i class="fas fa-eye"></i>
                             </div>
                             <h3 class="fw-bold mb-3">Visi</h3>
-                            <p class="text-muted">
-                                Menjadi lembaga pelatihan komputer unggulan di Indonesia yang menghasilkan SDM berkualitas, siap kerja, dan berdaya saing global.
-                            </p>
+                            <?php if (!empty($visi)): ?>
+                                <?php foreach ($visi as $item): ?>
+                                    <p class="text-muted"><?= $item['konten'] ?></p>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-muted">
+                                    Menjadi lembaga pelatihan komputer unggulan di Indonesia yang menghasilkan SDM berkualitas, siap kerja, dan berdaya saing global.
+                                </p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -89,10 +120,16 @@
                     </div>
                     <h3 class="fw-bold mb-3 text-center">Misi</h3>
                     <ul class="list-unstyled text-muted ps-3">
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Menyelenggarakan pelatihan berbasis kompetensi...</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Mengembangkan instruktur profesional...</li>
-                        <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Membangun kerja sama strategis...</li>
-                        <li><i class="fas fa-check-circle text-success me-2"></i> Memberdayakan masyarakat melalui pendidikan vokasi...</li>
+                        <?php if (!empty($misi)): ?>
+                            <?php foreach ($misi as $item): ?>
+                                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> <?= $item['konten'] ?></li>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Menyelenggarakan pelatihan berbasis kompetensi...</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Mengembangkan instruktur profesional...</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Membangun kerja sama strategis...</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i> Memberdayakan masyarakat melalui pendidikan vokasi...</li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
@@ -106,112 +143,37 @@
         <div class="card shadow-lg border-0 rounded-3">
             <div class="card-body p-4">
                 <h3 class="text-center text-primary mb-4">Manajemen LPK INASABA</h3>
-                
+
                 <div class="row justify-content-center">
-                    <!-- Rina Arsiyanti, M.Kom -->
-                    <div class="col-md-2 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/women/44.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Rina Arsiyanti" 
-                                 style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;">
-                            <div class="position-absolute bottom-0 start-50 translate-middle-x bg-primary text-white rounded-circle p-1" style="width: 30px; height: 30px; line-height: 26px;">
-                                <i class="fab fa-facebook-f"></i>
+                    <?php if (!empty($manajemen)): ?>
+                        <?php foreach ($manajemen as $item): ?>
+                            <div class="col-md-2 text-center mb-4">
+                                <div class="position-relative">
+                                    <?php if (!empty($item['foto']) && file_exists(FCPATH . 'uploads/struktural/' . $item['foto'])): ?>
+                                        <img src="<?= base_url('uploads/struktural/' . $item['foto']) ?>"
+                                            class="rounded-circle shadow"
+                                            alt="<?= $item['nama_lengkap'] ?>"
+                                            style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;"
+                                            onerror="this.src='<?= base_url('assets/img/default-avatar.png') ?>'">
+                                    <?php else: ?>
+                                        <img src="<?= base_url('assets/img/default-avatar.png') ?>"
+                                            class="rounded-circle shadow"
+                                            alt="<?= $item['nama_lengkap'] ?>"
+                                            style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;">
+                                    <?php endif; ?>
+                                    <?php if (!empty($item['facebook'])): ?>
+                                        <div class="position-absolute bottom-0 start-50 translate-middle-x bg-primary text-white rounded-circle p-1" style="width: 30px; height: 30px; line-height: 26px;">
+                                            <i class="fab fa-facebook-f"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <h5 class="mt-2 fw-bold"><?= $item['nama_lengkap'] ?></h5>
+                                <p class="text-muted"><?= $item['jabatan'] ?></p>
+                                <div class="d-flex justify-content-center mt-2">
+                                </div>
                             </div>
-                        </div>
-                        <h5 class="mt-2 fw-bold">Rina Arsiyanti, M.Kom</h5>
-                        <p class="text-muted">Pimpinan</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- Durratul Fainiyah -->
-                    <div class="col-md-2 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/women/62.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Durratul Fainiyah" 
-                                 style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;">
-                            <div class="position-absolute bottom-0 start-50 translate-middle-x bg-primary text-white rounded-circle p-1" style="width: 30px; height: 30px; line-height: 26px;">
-                                <i class="fab fa-facebook-f"></i>
-                            </div>
-                        </div>
-                        <h5 class="mt-2 fw-bold">Durratul Fainiyah</h5>
-                        <p class="text-muted">Kesiswaan</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- Mulky Billalina, SE -->
-                    <div class="col-md-2 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/women/35.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Mulky Billalina" 
-                                 style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;">
-                            <div class="position-absolute bottom-0 start-50 translate-middle-x bg-primary text-white rounded-circle p-1" style="width: 30px; height: 30px; line-height: 26px;">
-                                <i class="fab fa-facebook-f"></i>
-                            </div>
-                        </div>
-                        <h5 class="mt-2 fw-bold">Mulky Billalina, SE</h5>
-                        <p class="text-muted">Keuangan</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- M. Lutfi Maulana -->
-                    <div class="col-md-2 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/men/45.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="M. Lutfi Maulana" 
-                                 style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;">
-                            <div class="position-absolute bottom-0 start-50 translate-middle-x bg-primary text-white rounded-circle p-1" style="width: 30px; height: 30px; line-height: 26px;">
-                                <i class="fab fa-facebook-f"></i>
-                            </div>
-                        </div>
-                        <h5 class="mt-2 fw-bold">M. Lutfi Maulana</h5>
-                        <p class="text-muted">Desain & Marketing</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- Muhammad Syafiat -->
-                    <div class="col-md-2 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/men/68.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Muhammad Syafiat" 
-                                 style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00b4d8;">
-                            <div class="position-absolute bottom-0 start-50 translate-middle-x bg-primary text-white rounded-circle p-1" style="width: 30px; height: 30px; line-height: 26px;">
-                                <i class="fab fa-facebook-f"></i>
-                            </div>
-                        </div>
-                        <h5 class="mt-2 fw-bold">Muhammad Syafiat</h5>
-                        <p class="text-muted">Teknisi</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -224,100 +186,34 @@
         <div class="card shadow-lg border-0 rounded-3">
             <div class="card-body p-4">
                 <h3 class="text-center text-primary mb-4">Instruktur LPK INASABA</h3>
-                
+
                 <div class="row justify-content-center">
-                    <!-- M. Zainul Arifin, M.Kom -->
-                    <div class="col-md-3 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/men/72.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="M. Zainul Arifin" 
-                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;">
-                        </div>
-                        <h5 class="mt-2 fw-bold">M. Zainul Arifin, M.Kom</h5>
-                        <p class="text-muted">Instruktur Administrasi Perkantoran & Jaringan Komputer</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- M. Rachiar -->
-                    <div class="col-md-3 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/men/56.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="M. Rachiar" 
-                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;">
-                        </div>
-                        <h5 class="mt-2 fw-bold">M. Rachiar</h5>
-                        <p class="text-muted">Instruktur Administrasi Perkantoran & Web Pemrograman</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- Duyam Abul Hanif, M.Pd -->
-                    <div class="col-md-3 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/men/28.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Duyam Abul Hanif" 
-                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;">
-                        </div>
-                        <h5 class="mt-2 fw-bold">Duyam Abul Hanif, M.Pd</h5>
-                        <p class="text-muted">Instruktur Desain Grafis</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
+                    <?php if (!empty($instruktur)): ?>
+                        <?php foreach ($instruktur as $item): ?>
+                            <div class="col-md-3 text-center mb-4">
+                                <div class="position-relative">
+                                    <?php if (!empty($item['foto']) && file_exists(FCPATH . 'uploads/struktural/' . $item['foto'])): ?>
+                                        <img src="<?= base_url('uploads/struktural/' . $item['foto']) ?>"
+                                            class="rounded-circle shadow"
+                                            alt="<?= $item['nama_lengkap'] ?>"
+                                            style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;"
+                                            onerror="this.src='<?= base_url('assets/img/default-avatar.png') ?>'">
+                                    <?php else: ?>
+                                        <img src="<?= base_url('assets/img/default-avatar.png') ?>"
+                                            class="rounded-circle shadow"
+                                            alt="<?= $item['nama_lengkap'] ?>"
+                                            style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;">
+                                    <?php endif; ?>
+                                </div>
+                                <h5 class="mt-2 fw-bold"><?= $item['nama_lengkap'] ?></h5>
+                                <p class="text-muted"><?= $item['keahlian'] ?></p>
+                                <div class="d-flex justify-content-center mt-2">
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
-                
-                <div class="row justify-content-center">
-                    <!-- Nurul Hidayah -->
-                    <div class="col-md-3 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/women/36.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Nurul Hidayah" 
-                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;">
-                        </div>
-                        <h5 class="mt-2 fw-bold">Nurul Hidayah</h5>
-                        <p class="text-muted">Instruktur Administrasi Perkantoran & Desain Grafis</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                    
-                    <!-- Yafi' Aha Sababila -->
-                    <div class="col-md-3 text-center mb-4">
-                        <div class="position-relative">
-                            <img src="https://randomuser.me/api/portraits/women/53.jpg" 
-                                 class="rounded-circle shadow" 
-                                 alt="Yafi' Aha Sababila" 
-                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #00b4d8;">
-                        </div>
-                        <h5 class="mt-2 fw-bold">Yafi' Aha Sababila</h5>
-                        <p class="text-muted">Instruktur Administrasi Perkantoran & Jaringan Komputer</p>
-                        <div class="d-flex justify-content-center mt-2">
-                            <a href="#" class="text-muted me-2"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="text-muted me-2"><i class="fab fa-linkedin-in"></i></a>
-                            <a href="#" class="text-muted"><i class="fab fa-google"></i></a>
-                        </div>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>

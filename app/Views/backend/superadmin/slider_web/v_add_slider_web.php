@@ -86,7 +86,19 @@
                         </small>
                     </div>
 
-                                    <!-- Urutan -->
+                    <!-- Preview Gambar -->
+                    <div class="form-group">
+                        <label>Preview Gambar</label>
+                        <div class="mt-2">
+                            <img id="preview-image"
+                                src="<?= base_url('template/dist/img/default-image.png') ?>"
+                                alt="Preview"
+                                class="img-thumbnail"
+                                style="max-width: 100%; height: auto; max-height: 300px; display: block;">
+                        </div>
+                    </div>
+
+                    <!-- Urutan -->
                     <div class="form-group">
                         <label for="urutan">Urutan Tampil <span class="text-danger">*</span></label>
                         <input type="number"

@@ -61,9 +61,15 @@ class M_pendaftaran extends Model
     public function getBySiswa($id_siswa, $status = null)
     {
         $builder = $this->db->table($this->table . ' p')
-            ->select('p.*, k.nama_kursus, k.slug, k.gambar_utama, pk.nama_program, pb.status_pembayaran')
+            ->select('p.*, k.nama_kursus, k.slug, k.gambar_utama, k.id_karyawan,
+                     dk.gambar_detail_a, pk.nama_program, pkt.nama_paket, pkt.total_pertemuan, pb.status_pembayaran,
+                     kar.nama_lengkap as nama_instruktur,
+                     (SELECT COUNT(q.id_quiz) FROM quiz q WHERE q.id_kursus = k.id_kursus) as jumlah_quiz')
             ->join('kursus k', 'k.id_kursus = p.id_kursus', 'left')
+            ->join('karyawan kar', 'kar.id_karyawan = k.id_karyawan', 'left')
+            ->join('detail_kursus dk', 'dk.id_kursus = k.id_kursus', 'left')
             ->join('program_kursus pk', 'pk.id_program = k.id_program', 'left')
+            ->join('paket_kursus pkt', 'pkt.id_kursus = k.id_kursus', 'left')
             ->join('pembayaran pb', 'pb.kode_invoice = p.kode_invoice', 'left')
             ->where('p.id_siswa', $id_siswa);
 
@@ -111,9 +117,14 @@ class M_pendaftaran extends Model
     public function detailDaftar($id_pendaftaran)
     {
         return $this->db->table($this->table . ' p')
-            ->select('p.*, k.nama_kursus, k.slug, k.gambar_utama, pk.nama_program, k.deskripsi_singkat, k.deskripsi, k.materi, k.durasi, k.target_peserta, k.persyaratan, k.harga, k.diskon')
+            ->select('p.*, k.nama_kursus, k.slug, dk.gambar_detail_a, pk.nama_program, k.deskripsi_singkat, dk.materi_yang_dipelajari, pkt.durasi_per_pertemuan_jam, pkt.total_pertemuan, pkt.harga_reguler as harga,
+                     pb.status_pembayaran, pb.jumlah_bayar, pb.metode_pembayaran, pb.tanggal_konfirmasi as pembayaran_tanggal_konfirmasi,
+                     (SELECT COUNT(q.id_quiz) FROM quiz q WHERE q.id_kursus = k.id_kursus) as jumlah_quiz')
             ->join('kursus k', 'k.id_kursus = p.id_kursus', 'left')
+            ->join('detail_kursus dk', 'dk.id_kursus = k.id_kursus', 'left')
             ->join('program_kursus pk', 'pk.id_program = k.id_program', 'left')
+            ->join('paket_kursus pkt', 'pkt.id_kursus = k.id_kursus', 'left')
+            ->join('pembayaran pb', 'pb.kode_invoice = p.kode_invoice', 'left')
             ->where('p.id_pendaftaran', $id_pendaftaran)
             ->get()
             ->getRowArray();
@@ -147,12 +158,12 @@ class M_pendaftaran extends Model
     // ✅ GET PENDAFTARAN PENDING
     public function getPendaftaranPending()
     {
-        return $this->db->table($this->table)
-            ->select('pendaftaran.*, siswa.nama_lengkap, siswa.email, siswa.no_telepon, kursus.nama_kursus')
-            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa')
-            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus')
-            ->where('pendaftaran.status', 'pending')
-            ->orderBy('pendaftaran.tanggal_pendaftaran', 'ASC')
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, s.nama_lengkap, s.email, s.no_telepon, k.nama_kursus')
+            ->join('siswa s', 's.id_siswa = p.id_siswa')
+            ->join('kursus k', 'k.id_kursus = p.id_kursus')
+            ->where('p.status', 'pending')
+            ->orderBy('p.tanggal_pendaftaran', 'ASC')
             ->get()
             ->getResultArray();
     }
@@ -160,11 +171,11 @@ class M_pendaftaran extends Model
     // ✅ GET PENDAFTARAN BY INVOICE
     public function getByInvoice($kode_invoice)
     {
-        return $this->db->table($this->table)
-            ->select('pendaftaran.*, siswa.nama_lengkap, siswa.email, siswa.no_telepon, kursus.nama_kursus')
-            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa')
-            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus')
-            ->where('pendaftaran.kode_invoice', $kode_invoice)
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, s.nama_lengkap, s.email, s.no_telepon, k.nama_kursus')
+            ->join('siswa s', 's.id_siswa = p.id_siswa')
+            ->join('kursus k', 'k.id_kursus = p.id_kursus')
+            ->where('p.kode_invoice', $kode_invoice)
             ->get()
             ->getRowArray();
     }
@@ -210,5 +221,71 @@ class M_pendaftaran extends Model
         $this->update($id_pendaftaran, ['nilai_akhir' => $nilai_akhir]);
 
         return $nilai_akhir;
+    }
+
+    // ✅ GET ALL INVENTORY
+    public function getAllInventory()
+    {
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, s.nama_lengkap as nama_siswa, k.nama_kursus')
+            ->join('siswa s', 'p.id_siswa = s.id_siswa', 'left')
+            ->join('kursus k', 'p.id_kursus = k.id_kursus', 'left')
+            ->orderBy('p.tanggal_pendaftaran', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+    // ✅ GET PENDAFTARAN WITH SISWA
+    public function getPendaftaranWithSiswa()
+    {
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, s.nama_lengkap, s.email, s.no_telepon, k.nama_kursus')
+            ->join('siswa s', 's.id_siswa = p.id_siswa')
+            ->join('kursus k', 'k.id_kursus = p.id_kursus')
+            ->orderBy('p.tanggal_pendaftaran', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+    // ✅ GET SISWA BY PENGAJAR
+    public function getSiswaByPengajar($id_karyawan)
+    {
+        return $this->db->table($this->table . ' p')
+            ->select('p.*, s.nama_lengkap, s.email, s.no_telepon, k.nama_kursus')
+            ->join('siswa s', 's.id_siswa = p.id_siswa')
+            ->join('kursus k', 'k.id_kursus = p.id_kursus')
+            ->where('k.id_pengajar', $id_karyawan)
+            ->orWhere('k.id_karyawan', $id_karyawan)
+            ->orderBy('p.tanggal_pendaftaran', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+    // ✅ GET TUGAS BY PENGAJAR
+    public function getTugasByPengajar($id_karyawan)
+    {
+        return $this->db->table('tugas t')
+            ->select('t.*, k.nama_kursus')
+            ->join('kursus k', 'k.id_kursus = t.id_kursus')
+            ->where('k.id_pengajar', $id_karyawan)
+            ->orWhere('k.id_karyawan', $id_karyawan)
+            ->orderBy('t.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
+    // ✅ INSERT TUGAS
+    public function insertTugas($data)
+    {
+        return $this->db->table('tugas')->insert($data);
+    }
+
+    // ✅ GET TUGAS BY ID
+    public function getTugasById($id_tugas)
+    {
+        return $this->db->table('tugas')
+            ->where('id_tugas', $id_tugas)
+            ->get()
+            ->getRowArray();
     }
 }

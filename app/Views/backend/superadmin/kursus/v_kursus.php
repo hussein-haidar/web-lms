@@ -22,9 +22,10 @@
                                 <option value="">-- Pilih <?= esc($cfg['label']) ?> --</option>
                                 <?php foreach ($cfg['options'] as $opt): ?>
                                     <?php $val = $opt['value'] ?? $opt[$cfg['column']] ?? ''; ?>
+                                    <?php $label = $opt['label'] ?? $opt['nama_program'] ?? $val; ?>
                                     <option value="<?= esc($val) ?>"
                                         <?= (isset($filters[$key]) && $filters[$key] == $val) ? 'selected' : '' ?>>
-                                        <?= esc(ucfirst($val)) ?>
+                                        <?= esc(ucfirst($label)) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -69,13 +70,13 @@
             <?php endif; ?>
 
             <!-- Info Filter Aktif -->
-            <?php if (!empty($filters['status']) || !empty($filters['nama_program']) || !empty($filters['search'])): ?>
+            <?php if (!empty($filters['program']) || !empty($filters['nama_program']) || !empty($filters['search'])): ?>
                 <div class="alert alert-info alert-dismissible">
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
                     <strong><i class="fa fa-filter"></i> Filter Aktif:</strong>
                     <?php
                     $activeFilters = [];
-                    if (!empty($filters['status'])) $activeFilters[] = "Status: <b>" . ucfirst($filters['status']) . "</b>";
+                    if (!empty($filters['program'])) $activeFilters[] = "Program: <b>" . ucfirst($filters['program']) . "</b>";
                     if (!empty($filters['nama_program'])) $activeFilters[] = "Jenis Kelas: <b>" . ucfirst($filters['nama_program']) . "</b>";
                                     echo implode(", ", $activeFilters);
                     ?>
@@ -156,6 +157,14 @@
                                                 title="Kelola Modul"
                                                 style="margin-bottom: 5px; display: inline-block;">
                                                 <i class="fa fa-book"></i> Modul
+                                            </a>
+
+                                            <!-- ✅ Add Modul Button -->
+                                            <a href="<?= base_url('home_superadmin/add_modul/' . $item['id_kursus']) ?>"
+                                                class="btn btn-xs btn-success"
+                                                title="Tambah Modul Baru"
+                                                style="margin-bottom: 5px; display: inline-block;">
+                                                <i class="fa fa-plus"></i> +Modul
                                             </a>
 
                                             <!-- ✅ Delete Button: Redirect ke list TANPA filter -->

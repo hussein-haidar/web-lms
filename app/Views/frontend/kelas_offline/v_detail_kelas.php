@@ -40,7 +40,7 @@ if (!empty($instrukturFoto)) {
             <img src="<?= base_url('kursus/materi/' . $gambarBanner) ?>"
                 class="d-block w-100"
                 alt="<?= esc($judulPaket) ?>"
-                style="height: 450px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8);"
+                style="height: 300px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8);"
                 onerror="this.onerror=null; this.src='https://via.placeholder.com/1200x450/0056b3/ffffff?text=<?= urlencode($judulPaket) ?>'">
         </div>
     </div>

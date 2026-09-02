@@ -52,6 +52,7 @@
 
                         <!-- Form -->
                         <form action="<?= base_url('auth_login/cek_login_superadmin') ?>" method="post">
+                            <?= csrf_field() ?>
                             <div class="mb-3">
                                 <label for="login_superadmin" class="form-label">Email or Username</label>
                                 <div class="input-group">

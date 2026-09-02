@@ -216,6 +216,19 @@ class M_kursus extends Model
             ->getResultArray();
     }
 
+    // ✅ GET KURSUS TERSEDIA
+    public function getKursusTersedia()
+    {
+        return $this->db->table('kursus k')
+            ->select('k.*, pk.nama_paket, pk.harga_reguler, pr.nama_program')
+            ->join('paket_kursus pk', 'pk.id_kursus = k.id_kursus', 'left')
+            ->join('program_kursus pr', 'pr.id_program = k.id_program', 'left')
+            ->where('k.status', 'aktif')
+            ->orderBy('k.nama_kursus', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
     // ✅ Method untuk staf admin - get semua kursus dengan filter
     public function getKursusWithFilter($filters = [], $filterConfig = [])
     {
@@ -233,7 +246,8 @@ class M_kursus extends Model
             ->join('paket_kursus pk', 'pk.id_kursus = k.id_kursus', 'left')
             ->join('program_kursus pr', 'pr.id_program = k.id_program', 'left')
             ->join('karyawan kr', 'kr.id_karyawan = k.id_karyawan', 'left')
-            ->where('pk.deleted_at IS NULL', null, false);
+            ->where('pk.deleted_at IS NULL', null, false)
+            ->where('k.deleted_at IS NULL', null, false); // Exclude soft deleted kursus
 
         // Apply filters
         foreach ($filters as $key => $value) {

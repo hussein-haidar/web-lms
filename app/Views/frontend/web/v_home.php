@@ -5,40 +5,36 @@
 // Ambil data kelas offline dari controller
 $offline_courses = $offline ?? [];
 $recommendations = $recommendations ?? [];
+$sliders = $sliders ?? [];
 ?>
 
 <!-- Program Banner - Carousel dengan Gambar -->
 <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
     <div class="carousel-inner">
-        <div class="carousel-item active">
-            <img src="<?= base_url('/gambar_kursus/jk.png') ?>"
-                class="d-block w-100"
-                alt="Program Profesi 1 Tahun"
-
-        </div>
-        <div class="carousel-item">
-            <img src="<?= base_url('/gambar_kursus/pb.png') ?>"
-                class="d-block w-100"
-                alt="Komputer untuk Anak"
-                style="height: 450px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8 100%);">
-
-        </div>
+        <?php if (!empty($sliders)): ?>
+            <?php foreach ($sliders as $key => $slider): ?>
+                <div class="carousel-item <?= $key == 0 ? 'active' : '' ?>">
+                    <img src="<?= base_url('uploads/slider_web/' . $slider['gambar_slider']) ?>"
+                        class="d-block w-100"
+                        alt="<?= htmlspecialchars($slider['judul_slider']) ?>"
+                        style="height: 300px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8);">
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="carousel-item active">
+                <img src="<?= base_url('/gambar_kursus/tf.png') ?>"
+                    class="d-block w-100"
+                    alt="Program Profesi 1 Tahun"
+                    style="height: 300px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8);">
+            </div>
+        <?php endif; ?>
     </div>
-
     <div class="carousel-indicators">
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-    </div>
-</div>
-
-<!-- Wave Divider - Diperkecil -->
-<div class="position-relative overflow-hidden" style="height: 50px; background: linear-gradient(to right, #0056b3, #00b4d8);">
-    <div class="wave-divider-bottom" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="height: 100%; width: 100%;">
-            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="#ffffff"></path>
-            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="#ffffff"></path>
-            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="#ffffff"></path>
-        </svg>
+        <?php if (!empty($sliders)): ?>
+            <?php foreach ($sliders as $key => $slider): ?>
+                <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="<?= $key ?>" class="<?= $key == 0 ? 'active' : '' ?>" aria-current="<?= $key == 0 ? 'true' : 'false' ?>" aria-label="Slide <?= $key + 1 ?>"></button>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -50,93 +46,129 @@ $recommendations = $recommendations ?? [];
 
         <!-- Baris 1: 6 cards -->
         <div class="row g-3 mb-3">
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="10000" data-suffix="+">0</div>
-                    <div class="fw-bold small mt-2">Peserta Program</div>
+            <?php if (!empty($stats_row1)): ?>
+                <?php foreach ($stats_row1 as $stat): ?>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                            <div class="display-6 fw-bold text-primary counter <?= !empty($stat['suffix_stats']) && strpos($stat['suffix_stats'], 'Tahun') !== false ? 'text-nowrap' : '' ?>" 
+                                 data-target="<?= $stat['nilai_stats'] ?>" 
+                                 data-suffix="<?= htmlspecialchars($stat['suffix_stats'] ?? '') ?>">0</div>
+                            <div class="fw-bold small mt-2"><?= htmlspecialchars($stat['judul_stats']) ?></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <!-- Fallback hardcoded stats if database is empty -->
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="10000" data-suffix="+">0</div>
+                        <div class="fw-bold small mt-2">Peserta Program</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter text-nowrap" data-target="25" data-suffix=" Tahun">0</div>
-                    <div class="fw-bold small mt-2">Mendidik & mengedukasi Indonesia</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter text-nowrap" data-target="25" data-suffix=" Tahun">0</div>
+                        <div class="fw-bold small mt-2">Mendidik & mengedukasi Indonesia</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="100" data-suffix="+">0</div>
-                    <div class="fw-bold small mt-2">Mitra</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="100" data-suffix="+">0</div>
+                        <div class="fw-bold small mt-2">Mitra</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="70" data-suffix="%">0</div>
-                    <div class="fw-bold small mt-2">Praktek</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="70" data-suffix="%">0</div>
+                        <div class="fw-bold small mt-2">Praktek</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="30" data-suffix="%">0</div>
-                    <div class="fw-bold small mt-2">Teori</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="30" data-suffix="%">0</div>
+                        <div class="fw-bold small mt-2">Teori</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="95" data-suffix="%">0</div>
-                    <div class="fw-bold small mt-2">Alumni Terserap Kerja</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="95" data-suffix="%">0</div>
+                        <div class="fw-bold small mt-2">Alumni Terserap Kerja</div>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
 
         <!-- Baris 2: 3 cards (centered) -->
         <div class="row g-3 justify-content-center">
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="20" data-suffix="+">0</div>
-                    <div class="fw-bold small mt-2">Instruktur Bersertifikat</div>
+            <?php if (!empty($stats_row2)): ?>
+                <?php foreach ($stats_row2 as $stat): ?>
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                            <?php if (empty($stat['suffix_stats']) && $stat['nilai_stats'] == 0): ?>
+                                <!-- Special case for LSP P1 -->
+                                <div class="display-6 fw-bold text-primary"><?= htmlspecialchars($stat['judul_stats']) ?></div>
+                                <div class="fw-bold small mt-2"><?= htmlspecialchars($stat['judul_stats']) ?></div>
+                            <?php else: ?>
+                                <div class="display-6 fw-bold text-primary counter" 
+                                     data-target="<?= $stat['nilai_stats'] ?>" 
+                                     data-suffix="<?= htmlspecialchars($stat['suffix_stats'] ?? '') ?>">0</div>
+                                <div class="fw-bold small mt-2"><?= htmlspecialchars($stat['judul_stats']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <!-- Fallback hardcoded stats if database is empty -->
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="20" data-suffix="+">0</div>
+                        <div class="fw-bold small mt-2">Instruktur Bersertifikat</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary counter" data-target="15" data-suffix="+">0</div>
-                    <div class="fw-bold small mt-2">Program Pelatihan</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary counter" data-target="15" data-suffix="+">0</div>
+                        <div class="fw-bold small mt-2">Program Pelatihan</div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
-                    <div class="display-6 fw-bold text-primary">LSP P1</div>
-                    <div class="fw-bold small mt-2">Sertifikasi Resmi</div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="bg-light border rounded p-3 h-100 d-flex flex-column justify-content-center align-items-center">
+                        <div class="display-6 fw-bold text-primary">LSP P1</div>
+                        <div class="fw-bold small mt-2">Sertifikasi Resmi</div>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 </section>
+
+<!-- Wave Divider -->
+<div class="position-relative overflow-hidden" style="height: 80px; background: linear-gradient(to right, #0056b3, #00b4d8);">
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;">
+        <path d="M0,120V73.71c47.79,-22.2,103.59,-32.17,158,-28,70.36,5.37,136.33,33.31,206.8,37.5C438.64,87.57,512.34,66.33,583,47.95c69.27,-18,138.3,-24.88,209.4,-13.08,36.15,6,69.85,17.84,104.45,29.34C989.49,95,1113,134.29,1200,67.53V120Z" opacity=".25" fill="#ffffff"></path>
+        <path d="M0,120V104.19C13,83.08,27.64,63.14,47.69,47.95,99.41,8.73,165,9,224.58,28.42c31.15,10.15,60.09,26.07,89.67,39.8,40.92,19,84.73,46,130.83,49.67,36.26,2.85,70.9,-9.42,98.6,-31.56,31.77,-25.39,62.32,-62,103.63,-73,40.44,-10.79,81.35,6.69,119.13,24.28s75.16,39,116.92,43.05c59.73,5.85,113.28,-22.88,168.9,-38.84,30.2,-8.66,59,-6.17,87.09,7.5,22.43,10.89,48,26.93,60.65,49.24V120Z" opacity=".5" fill="#ffffff"></path>
+        <path d="M0,120V114.37C149.93,61,314.09,48.68,475.83,77.43c43,7.64,84.23,20.12,127.61,26.46,59,8.63,112.48,-12.24,165.56,-35.4C827.93,42.78,886,24.76,951.2,30c86.53,7,172.46,45.71,248.8,84.81V120Z" fill="#ffffff"></path>
+    </svg>
+</div>
 
 <!-- Partners Section - Bootstrap Carousel - Margin dikurangi -->
 <div class="bg-light py-3">
     <div class="container">
         <h2 class="text-center mb-3 fw-bold text-primary">Mitra Kerja</h2>
-        
+
         <?php if (!empty($partners_carousel)): ?>
             <!-- Bootstrap Carousel -->
             <div id="partnersCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
                 <!-- Carousel Indicators -->
                 <div class="carousel-indicators" style="bottom: -50px; margin-top: 50px;">
                     <?php foreach ($partners_carousel as $index => $slide): ?>
-                        <button type="button" 
-                                data-bs-target="#partnersCarousel" 
-                                data-bs-slide-to="<?= $index ?>" 
-                                class="<?= $index === 0 ? 'active' : '' ?>" 
-                                <?= $index === 0 ? 'aria-current="true"' : '' ?> 
-                                aria-label="Slide <?= $index + 1 ?>" 
-                                style="background-color: #0d6efd; width: 12px; height: 12px; border-radius: 50%; margin: 0 5px;"></button>
+                        <button type="button"
+                            data-bs-target="#partnersCarousel"
+                            data-bs-slide-to="<?= $index ?>"
+                            class="<?= $index === 0 ? 'active' : '' ?>"
+                            <?= $index === 0 ? 'aria-current="true"' : '' ?>
+                            aria-label="Slide <?= $index + 1 ?>"
+                            style="background-color: #0d6efd; width: 12px; height: 12px; border-radius: 50%; margin: 0 5px;"></button>
                     <?php endforeach; ?>
                 </div>
 
@@ -150,16 +182,16 @@ $recommendations = $recommendations ?? [];
                                         <div class="border rounded p-3 d-flex align-items-center justify-content-center h-100 bg-white">
                                             <?php if (!empty($partner['url_website'])): ?>
                                                 <a href="<?= esc($partner['url_website']) ?>" target="_blank" rel="noopener noreferrer">
-                                                    <img src="<?= base_url('/slider/' . $partner['logo_mitra']) ?>" 
-                                                         alt="<?= esc($partner['nama_mitra']) ?>" 
-                                                         class="img-fluid" 
-                                                         loading="lazy">
+                                                    <img src="<?= base_url('/uploads/mitra_kerja/' . $partner['logo_mitra']) ?>"
+                                                        alt="<?= esc($partner['nama_mitra']) ?>"
+                                                        class="img-fluid"
+                                                        loading="lazy">
                                                 </a>
                                             <?php else: ?>
-                                                <img src="<?= base_url('/slider/' . $partner['logo_mitra']) ?>" 
-                                                     alt="<?= esc($partner['nama_mitra']) ?>" 
-                                                     class="img-fluid" 
-                                                     loading="lazy">
+                                                <img src="<?= base_url('/uploads/mitra_kerja/' . $partner['logo_mitra']) ?>"
+                                                    alt="<?= esc($partner['nama_mitra']) ?>"
+                                                    class="img-fluid"
+                                                    loading="lazy">
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -317,19 +349,19 @@ $recommendations = $recommendations ?? [];
                                         <!-- Action Buttons -->
                                         <div class="d-flex gap-2">
                                             <!-- Form Tambah ke Keranjang -->
-                                               <?php if (!empty($r['id_paket'])): ?>
-                                        <form action="<?= base_url('home_siswa/save_cart') ?>" method="post" class="d-inline">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="id_kursus" value="<?= $r['id_kursus'] ?>">
-                                            <input type="hidden" name="id_paket" value="<?= $r['id_paket'] ?>">
-                                            <input type="hidden" name="nama_paket" value="<?= $r['nama_paket'] ?? $r['nama_kursus'] ?>">
-                                            <input type="hidden" name="nama_program" value="<?= $r['nama_program'] ?>">
-                                            <input type="hidden" name="harga_kursus" value="<?= $r['harga_reguler'] ?>">
-                                            <input type="hidden" name="gambar_detail_a" value="<?= $r['gambar_detail_a'] ?>">
-                                            <button type="submit" class="btn btn-outline-warning btn-sm rounded-circle" title="Tambah ke Keranjang">
-                                                <i class="fas fa-cart-plus"></i>
-                                            </button>
-                                        </form>
+                                            <?php if (!empty($r['id_paket'])): ?>
+                                                <form action="<?= base_url('home_siswa/save_cart') ?>" method="post" class="d-inline">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="id_kursus" value="<?= $r['id_kursus'] ?>">
+                                                    <input type="hidden" name="id_paket" value="<?= $r['id_paket'] ?>">
+                                                    <input type="hidden" name="nama_paket" value="<?= $r['nama_paket'] ?? $r['nama_kursus'] ?>">
+                                                    <input type="hidden" name="nama_program" value="<?= $r['nama_program'] ?>">
+                                                    <input type="hidden" name="harga_kursus" value="<?= $r['harga_reguler'] ?>">
+                                                    <input type="hidden" name="gambar_detail_a" value="<?= $r['gambar_detail_a'] ?>">
+                                                    <button type="submit" class="btn btn-outline-warning btn-sm rounded-circle" title="Tambah ke Keranjang">
+                                                        <i class="fas fa-cart-plus"></i>
+                                                    </button>
+                                                </form>
 
                                                 <!-- Tombol Beli Sekarang -->
                                                 <a href="<?= base_url('home_siswa/checkout_direct/' . $r['id_paket']) ?>" class="btn btn-primary btn-sm rounded-pill px-3">Beli</a>
@@ -461,8 +493,8 @@ $recommendations = $recommendations ?? [];
                                     alt="<?= esc($post['judul_postingan']) ?>"
                                     style="height: 200px; object-fit: cover;">
                             <?php else: ?>
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
-                                     style="height: 200px;">
+                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                                    style="height: 200px;">
                                     <i class="fas fa-newspaper fa-3x text-muted"></i>
                                 </div>
                             <?php endif; ?>
@@ -476,14 +508,14 @@ $recommendations = $recommendations ?? [];
                                     </span>
                                 </div>
                                 <h6 class="card-title fw-bold text-primary">
-                                    <a href="<?= base_url('postingan/detail/' . $post['slug']) ?>" 
-                                       class="text-decoration-none text-primary">
+                                    <a href="<?= base_url('postingan/detail/' . $post['slug']) ?>"
+                                        class="text-decoration-none text-primary">
                                         <?= esc(substr($post['judul_postingan'], 0, 50) . (strlen($post['judul_postingan']) > 50 ? '...' : '')) ?>
                                     </a>
                                 </h6>
                                 <p class="card-text small text-muted"><?= esc($post['excerpt']) ?></p>
-                                <a href="<?= base_url('postingan/detail/' . $post['slug']) ?>" 
-                                   class="btn btn-sm btn-outline-primary mt-auto">Baca Selengkapnya</a>
+                                <a href="<?= base_url('postingan/detail/' . $post['slug']) ?>"
+                                    class="btn btn-sm btn-outline-primary mt-auto">Baca Selengkapnya</a>
                             </div>
                             <div class="card-footer bg-white border-0">
                                 <small class="text-muted">
@@ -501,7 +533,7 @@ $recommendations = $recommendations ?? [];
                 </div>
             <?php endif; ?>
         </div>
-        
+
         <!-- Link Lihat Semua -->
         <div class="text-center mt-4">
             <a href="<?= base_url('postingan') ?>" class="btn btn-primary">
@@ -591,6 +623,43 @@ $recommendations = $recommendations ?? [];
                 }
             });
         }
+
+        // Counter Animation for Stats
+        function animateCounter() {
+            const counters = document.querySelectorAll('.counter');
+            const speed = 200; // Animation speed
+
+            counters.forEach(counter => {
+                const animate = () => {
+                    const target = parseInt(counter.getAttribute('data-target'));
+                    const suffix = counter.getAttribute('data-suffix') || '';
+                    const current = parseInt(counter.innerText.replace(/[^0-9]/g, ''));
+                    const increment = target / speed;
+
+                    if (current < target) {
+                        counter.innerText = Math.ceil(current + increment) + suffix;
+                        setTimeout(animate, 1);
+                    } else {
+                        counter.innerText = target + suffix;
+                    }
+                };
+
+                // Start animation when element is in viewport
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            animate();
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                });
+
+                observer.observe(counter);
+            });
+        }
+
+        // Initialize counter animation
+        animateCounter();
     });
 </script>
 

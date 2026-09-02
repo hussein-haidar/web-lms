@@ -250,6 +250,18 @@ class M_sertifikat extends Model
         return $fixed;
     }
 
+    // ✅ GET ALL SERTIFIKAT
+    public function getSertifikatAll()
+    {
+        return $this->db->table($this->table . ' s')
+            ->select('s.*, p.nama_lengkap as nama_siswa, k.nama_kursus')
+            ->join('siswa p', 's.id_siswa = p.id_siswa')
+            ->join('kursus k', 's.id_kursus = k.id_kursus')
+            ->orderBy('s.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+    }
+
     // ✅ HITUNG NILAI AKHIR DARI QUIZ UNTUK SERTIFIKAT
     public function hitungNilaiDariQuiz($id_pendaftaran)
     {

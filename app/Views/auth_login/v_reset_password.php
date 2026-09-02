@@ -44,6 +44,7 @@
 
                         <!-- Form -->
                         <form method="post" action="<?= base_url('auth_login/reset_password_siswa/' . $user['id_siswa']); ?>">
+                            <?= csrf_field() ?>
                             <div class="mb-3">
                                 <label for="new_password" class="form-label">New Password</label>
                                 <div class="input-group">

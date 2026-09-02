@@ -2,9 +2,9 @@
 <?= $this->section('content') ?>
 
 <div style="padding: 1.5rem 1rem;">
-    <div style="display: flex; flex-wrap: wrap; margin: 0 -0.75rem; max-width: 100%;">
-        <!-- Course Info Card -->
-        <div style="flex: 0 0 33.333333%; max-width: 33.333333%; padding: 0 0.75rem;">
+    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; max-width: 100%;">
+        <!-- Left Column -->
+        <div style="flex: 0 0 400px; max-width: 400px;">
             <!-- Course Card -->
             <div style="background: white; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); border-radius: 0.75rem; margin-bottom: 1.5rem;">
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 0.75rem 0.75rem 0 0;">
@@ -14,79 +14,134 @@
                     </h5>
                 </div>
                 <div style="padding: 1rem;">
-                    <!-- Course Image -->
-                    <?php if (!empty($pendaftaran['gambar_detail_a'])): ?>
-                        <img src="<?= base_url('kursus/materi/' . $pendaftaran['gambar_detail_a']) ?>"
-                            style="width: 100%; border-radius: 0.75rem; margin-bottom: 1rem; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);"
-                            alt="<?= $pendaftaran['nama_kursus'] ?>"
-                            onerror="this.src='<?= base_url('kursus/materi/as.png') ?>'">
-                    <?php else: ?>
-                        <div style="text-align: center; padding: 1.5rem 0; margin-bottom: 1rem; background: #f8f9fa; border-radius: 0.75rem;">
-                            <i class="fas fa-book-open" style="font-size: 4rem; color: #6c757d;"></i>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Course Info -->
-                    <div style="margin-bottom: 1rem;">
-                        <span style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">
-                            <i class="fas fa-tag" style="margin-right: 0.25rem;"></i>
-                            <?= esc($pendaftaran['nama_program'] ?? '-') ?>
-                        </span>
-                    </div>
-
-                    <!-- Payment Info -->
-                    <div style="margin-bottom: 1.5rem;">
-                        <h6 style="color: #6c757d; margin-bottom: 1rem; font-size: 1rem;">Informasi Pembayaran</h6>
-                        <div style="border: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
-                                <small style="color: #6c757d;">Invoice</small>
-                                <strong><?= esc($pendaftaran['kode_invoice'] ?? '-') ?></strong>
+                    <!-- Course Image and Quiz Count -->
+                    <div style="display: flex; gap: 1rem; align-items: start;">
+                        <?php if (!empty($pendaftaran['gambar_detail_a'])): ?>
+                            <img src="<?= base_url('kursus/materi/' . $pendaftaran['gambar_detail_a']) ?>"
+                                style="width: 100%; height: auto; max-width: 180px; max-height: 180px; object-fit: contain; border-radius: 0.75rem; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);"
+                                alt="<?= $pendaftaran['nama_kursus'] ?>"
+                                onerror="this.src='<?= base_url('kursus/materi/as.png') ?>'">
+                        <?php else: ?>
+                            <div style="width: 180px; height: 180px; border-radius: 0.75rem; background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-book-open" style="font-size: 3rem; color: #6c757d;"></i>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
-                                <small style="color: #6c757d;">Status</small>
-                                <span style="background: #28a745; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">Lunas</span>
+                        <?php endif; ?>
+                        
+                        <!-- Course Info -->
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="margin-bottom: 1rem;">
+                                <h6 style="margin: 0; font-size: 1.125rem; font-weight: 600;">
+                                    <i class="fas fa-tag" style="margin-right: 0.5rem;"></i>
+                                    <?= esc($pendaftaran['nama_program'] ?? '-') ?>
+                                </h6>
+                                <span style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">
+                                    <?= !empty($pendaftaran['jumlah_quiz']) ? esc($pendaftaran['jumlah_quiz']) : '0' ?> Quiz
+                                </span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
-                                <small style="color: #6c757d;">Jumlah Bayar</small>
-                                <strong style="color: #28a745;">Rp <?= number_format(!empty($pendaftaran['pembayaran_jumlah_bayar']) ? $pendaftaran['pembayaran_jumlah_bayar'] : ($pendaftaran['jumlah_bayar'] ?? 0), 0, ',', '.') ?></strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
-                                <small style="color: #6c757d;">Metode</small>
-                                <span><?= !empty($pendaftaran['metode_pembayaran']) ? ucfirst(str_replace('_', ' ', $pendaftaran['metode_pembayaran'])) : '-' ?></span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
-                                <small style="color: #6c757d;">Tanggal Konfirmasi</small>
-                                <span><?= !empty($pendaftaran['pembayaran_tanggal_konfirmasi']) ? date('d/m/Y', strtotime($pendaftaran['pembayaran_tanggal_konfirmasi'])) : (!empty($pendaftaran['tanggal_konfirmasi']) ? date('d/m/Y', strtotime($pendaftaran['tanggal_konfirmasi'])) : '-') ?></span>
+                            
+                            <!-- Microsoft Office Content -->
+                            <div style="margin-bottom: 1rem;">
+                                <h6 style="margin: 0; font-size: 1.125rem; font-weight: 600;">
+                                    <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                                    Microsoft Office
+                                </h6>
+                                <div style="color: #6c757d; line-height: 1.6;">
+                                    <?= !empty($pendaftaran['materi_yang_dipelajari']) ? nl2br(esc((string)$pendaftaran['materi_yang_dipelajari'])) : 'Tidak ada materi pembelajaran utama yang tersedia.' ?>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Progress -->
-                    <div style="margin-bottom: 1.5rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <h6 style="margin: 0; font-size: 1rem;">Progress Pembelajaran</h6>
-                            <span style="background: #007bff; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;"><?= $progress_stats['progress_percentage'] ?>%</span>
-                        </div>
-                        <div style="height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">
-                            <div style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); height: 100%; width: <?= $progress_stats['progress_percentage'] ?>%; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div style="display: grid; gap: 0.5rem;">
-                        <a href="<?= base_url('home_siswa/belajar/' . $pendaftaran['id_pendaftaran']) ?>"
-                            style="background: #28a745; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-size: 1.125rem; font-weight: 500; text-align: center; display: block;">
-                            <i class="fas fa-play-circle" style="margin-right: 0.5rem;"></i> MULAI BELAJAR
-                        </a>
-                        <a href="<?= base_url('home_siswa/index') ?>" style="background: transparent; color: #6c757d; padding: 0.75rem 1.5rem; text-decoration: none; border: 1px solid #6c757d; border-radius: 0.5rem; font-weight: 500; text-align: center; display: block;">
-                            <i class="fas fa-home" style="margin-right: 0.5rem;"></i> Dashboard
-                        </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Statistics Card -->
+            <!-- Payment Info -->
             <div style="background: white; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); border-radius: 0.75rem; margin-bottom: 1.5rem;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 0.75rem 0.75rem 0 0;">
+                    <h6 style="margin: 0; font-size: 1rem; font-weight: 600;">
+                        <i class="fas fa-credit-card" style="margin-right: 0.5rem;"></i>
+                        Informasi Pembayaran
+                    </h6>
+                </div>
+                <div style="padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
+                        <small style="color: #6c757d;">Invoice</small>
+                        <strong><?= !empty($pendaftaran['kode_invoice']) ? esc($pendaftaran['kode_invoice']) : 'N/A' ?></strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
+                        <small style="color: #6c757d;">Status</small>
+                        <?php
+                            $status_pembayaran = $pendaftaran['status_pembayaran'] ?? '';
+                            if ($status_pembayaran === 'lunas' || $status_pembayaran === 'success') {
+                                $status_text = 'Lunas';
+                                $status_color = '#28a745';
+                            } elseif ($status_pembayaran === 'pending') {
+                                $status_text = 'Menunggu Pembayaran';
+                                $status_color = '#ffc107';
+                            } elseif ($status_pembayaran === 'kadaluarsa') {
+                                $status_text = 'Kadaluarsa';
+                                $status_color = '#dc3545';
+                            } else {
+                                $status_text = 'N/A';
+                                $status_color = '#6c757d';
+                            }
+                        ?>
+                        <span style="background: <?= $status_color ?>; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;"><?= $status_text ?></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
+                        <small style="color: #6c757d;">Jumlah Bayar</small>
+                        <?php
+                            $jumlah_bayar = 0;
+                            if (!empty($pendaftaran['pembayaran_jumlah_bayar'])) {
+                                $jumlah_bayar = $pendaftaran['pembayaran_jumlah_bayar'];
+                            } elseif (!empty($pendaftaran['jumlah_bayar'])) {
+                                $jumlah_bayar = $pendaftaran['jumlah_bayar'];
+                            }
+                        ?>
+                        <strong style="color: #28a745;">Rp <?= number_format($jumlah_bayar, 0, ',', '.') ?></strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #dee2e6;">
+                        <small style="color: #6c757d;">Metode</small>
+                        <span><?= !empty($pendaftaran['metode_pembayaran']) ? ucfirst(str_replace('_', ' ', $pendaftaran['metode_pembayaran'])) : 'N/A' ?></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                        <small style="color: #6c757d;">Tanggal Konfirmasi</small>
+                        <span><?= !empty($pendaftaran['pembayaran_tanggal_konfirmasi']) ? date('d/m/Y', strtotime($pendaftaran['pembayaran_tanggal_konfirmasi'])) : (!empty($pendaftaran['tanggal_konfirmasi']) ? date('d/m/Y', strtotime($pendaftaran['tanggal_konfirmasi'])) : 'N/A') ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div style="background: white; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); border-radius: 0.75rem; margin-bottom: 1.5rem;">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 0.75rem 0.75rem 0 0;">
+                    <h6 style="margin: 0; font-size: 1rem; font-weight: 600;">
+                        <i class="fas fa-chart-line" style="margin-right: 0.5rem;"></i>
+                        Progress Pembelajaran
+                    </h6>
+                </div>
+                <div style="padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.875rem;">Progress</span>
+                        <span style="background: #007bff; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;"><?= $progress_stats['progress_percentage'] ?>%</span>
+                    </div>
+                    <div style="height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); height: 100%; width: <?= $progress_stats['progress_percentage'] ?>%; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: grid; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <a href="<?= base_url('home_siswa/belajar/' . $pendaftaran['id_pendaftaran']) ?>"
+                    style="background: #28a745; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 0.5rem; font-size: 1.125rem; font-weight: 500; text-align: center; display: block;">
+                    <i class="fas fa-play-circle" style="margin-right: 0.5rem;"></i> MULAI BELAJAR
+                </a>
+                <a href="<?= base_url('home_siswa/index') ?>" style="background: transparent; color: #6c757d; padding: 0.75rem 1.5rem; text-decoration: none; border: 1px solid #6c757d; border-radius: 0.5rem; font-weight: 500; text-align: center; display: block;">
+                    <i class="fas fa-home" style="margin-right: 0.5rem;"></i> Dashboard
+                </a>
+            </div>
+
+            <!-- Statistics Card -->
+            <div style="background: white; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); border-radius: 0.75rem;">
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 0.75rem 0.75rem 0 0;">
                     <h6 style="margin: 0; font-size: 1rem; font-weight: 600;">
                         <i class="fas fa-chart-bar" style="margin-right: 0.5rem;"></i>
@@ -148,8 +203,8 @@
             </div>
         </div>
 
-        <!-- Course Content -->
-        <div style="flex: 0 0 66.666667%; max-width: 66.666667%; padding: 0 0.75rem;">
+        <!-- Right Column - Course Content -->
+        <div style="flex: 1; min-width: 0;">
             <div style="background: white; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); border-radius: 0.75rem;">
                 <div style="background: white; border-bottom: 1px solid #dee2e6; padding: 1rem; border-radius: 0.75rem 0.75rem 0 0;">
                     <ul style="display: flex; list-style: none; padding: 0; margin: 0; border-bottom: 1px solid #dee2e6;">
@@ -208,19 +263,37 @@
                                     <tbody>
                                         <tr style="border-bottom: 1px solid #dee2e6;">
                                             <td style="padding: 0.75rem; font-weight: 600;"><strong>Kode Invoice:</strong></td>
-                                            <td style="padding: 0.75rem;"><?= esc($pendaftaran['kode_invoice']) ?></td>
+                                            <td style="padding: 0.75rem;"><?= !empty($pendaftaran['kode_invoice']) ? esc($pendaftaran['kode_invoice']) : 'N/A' ?></td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid #dee2e6;">
                                             <td style="padding: 0.75rem; font-weight: 600;"><strong>Status:</strong></td>
-                                            <td style="padding: 0.75rem;"><span style="background: #28a745; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">Aktif - Pembayaran Lunas</span></td>
+                                            <td style="padding: 0.75rem;">
+                                                <?php
+                                                    $status_pembayaran = $pendaftaran['status_pembayaran'] ?? '';
+                                                    if ($status_pembayaran === 'lunas' || $status_pembayaran === 'success') {
+                                                        $status_text = 'Aktif - Pembayaran Lunas';
+                                                        $status_color = '#28a745';
+                                                    } elseif ($status_pembayaran === 'pending') {
+                                                        $status_text = 'Menunggu Pembayaran';
+                                                        $status_color = '#ffc107';
+                                                    } elseif ($status_pembayaran === 'kadaluarsa') {
+                                                        $status_text = 'Kadaluarsa';
+                                                        $status_color = '#dc3545';
+                                                    } else {
+                                                        $status_text = 'N/A';
+                                                        $status_color = '#6c757d';
+                                                    }
+                                                ?>
+                                                <span style="background: <?= $status_color ?>; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;"><?= $status_text ?></span>
+                                            </td>
                                         </tr>
                                         <tr style="border-bottom: 1px solid #dee2e6;">
                                             <td style="padding: 0.75rem; font-weight: 600;"><strong>Tanggal Pendaftaran:</strong></td>
-                                            <td style="padding: 0.75rem;"><?= date('d/m/Y H:i', strtotime($pendaftaran['tanggal_pendaftaran'])) ?></td>
+                                            <td style="padding: 0.75rem;"><?= !empty($pendaftaran['tanggal_pendaftaran']) ? date('d/m/Y H:i', strtotime($pendaftaran['tanggal_pendaftaran'])) : 'N/A' ?></td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 0.75rem; font-weight: 600;"><strong>Tanggal Konfirmasi:</strong></td>
-                                            <td style="padding: 0.75rem;"><?= !empty($pendaftaran['pembayaran_tanggal_konfirmasi']) ? date('d/m/Y H:i', strtotime($pendaftaran['pembayaran_tanggal_konfirmasi'])) : (!empty($pendaftaran['tanggal_konfirmasi']) ? date('d/m/Y H:i', strtotime($pendaftaran['tanggal_konfirmasi'])) : '-') ?></td>
+                                            <td style="padding: 0.75rem;"><?= !empty($pendaftaran['pembayaran_tanggal_konfirmasi']) ? date('d/m/Y H:i', strtotime($pendaftaran['pembayaran_tanggal_konfirmasi'])) : (!empty($pendaftaran['tanggal_konfirmasi']) ? date('d/m/Y H:i', strtotime($pendaftaran['tanggal_konfirmasi'])) : 'N/A') ?></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -235,18 +308,18 @@
                             Materi Pembelajaran
                         </h5>
 
-                        <?php if (!empty($modules)): ?>
+                        <?php if (!empty($modules) && is_array($modules)): ?>
                             <?php foreach ($modules as $module): ?>
                                 <div style="background: white; border: 1px solid #dee2e6; border-radius: 0.625rem; margin-bottom: 1rem;">
                                     <div style="background: #f8f9fa; padding: 0.75rem; border-bottom: 1px solid #dee2e6; border-radius: 0.625rem 0.625rem 0 0;">
                                         <h6 style="margin: 0; font-size: 1rem; font-weight: 600;">
                                             <i class="fas fa-folder-open" style="margin-right: 0.5rem;"></i>
-                                            <?= esc($module['nama_modul']) ?>
-                                            <span style="background: #6c757d; color: white; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; float: right;"><?= count($module['materi']) ?> materi</span>
+                                            <?= esc($module['nama_modul'] ?? 'Modul Tanpa Nama') ?>
+                                            <span style="background: #6c757d; color: white; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; float: right;"><?= !empty($module['materi']) && is_array($module['materi']) ? count($module['materi']) : 0 ?> materi</span>
                                         </h6>
                                     </div>
                                     <div style="padding: 1rem;">
-                                        <?php if (!empty($module['materi'])): ?>
+                                        <?php if (!empty($module['materi']) && is_array($module['materi'])): ?>
                                             <?php foreach ($module['materi'] as $material): ?>
                                                 <div style="display: flex; align-items: center; margin-bottom: 1rem; padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.3s ease;"
                                                    onmouseover="this.style.backgroundColor='#f8f9fa';"
@@ -275,7 +348,7 @@
                                                         <?php endif; ?>
                                                     </div>
                                                     <div style="flex: 1;">
-                                                        <h6 style="margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600;"><?= esc($material['judul_materi']) ?></h6>
+                                                        <h6 style="margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600;"><?= esc($material['judul_materi'] ?? 'Materi Tanpa Judul') ?></h6>
                                                         <small style="color: #6c757d;">
                                                             <?php if ($material['tipe_materi'] == 'quiz'): ?>
                                                                 <i class="fas fa-question-circle" style="margin-right: 0.25rem;"></i>
@@ -286,7 +359,7 @@
                                                                 <?php endif; ?>
                                                             <?php else: ?>
                                                                 <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>
-                                                                <?= $material['durasi'] ?> menit
+                                                                <?= !empty($material['durasi']) ? $material['durasi'] : '0' ?> menit
                                                                 <?php if ($material['is_completed'] == 1 && !empty($material['updated_at'])): ?>
                                                                     | <i class="fas fa-check" style="margin-right: 0.25rem;"></i>
                                                                     Selesai: <?= date('d/m/Y H:i', strtotime($material['updated_at'])) ?>
@@ -296,7 +369,7 @@
                                                     </div>
                                                     <div>
                                                         <span style="background: <?= $material['tipe_materi'] == 'quiz' ? '#ffc107' : ($material['tipe_materi'] == 'youtube' ? '#dc3545' : ($material['tipe_materi'] == 'zoom' ? '#17a2b8' : '#6c757d')) ?>; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
-                                                            <?= $material['tipe_materi'] == 'quiz' ? 'Quiz' : ucfirst($material['tipe_materi']) ?>
+                                                            <?= $material['tipe_materi'] == 'quiz' ? 'Quiz' : ucfirst($material['tipe_materi'] ?? 'materi') ?>
                                                         </span>
                                                     </div>
                                                 </div>
@@ -311,9 +384,10 @@
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div style="text-align: center; padding: 1.5rem 0;">
-                                <i class="fas fa-book" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                                <p style="color: #6c757d; margin: 0;">Belum ada modul pembelajaran tersedia.</p>
+                            <div style="text-align: center; padding: 2rem 0; background: #fff3cd; border: 2px dashed #ffc107; border-radius: 0.625rem; margin-bottom: 1rem;">
+                                <i class="fas fa-book" style="font-size: 3rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                                <h6 style="color: #856404; margin: 0 0 0.5rem 0; font-weight: 600;">Belum ada modul pembelajaran tersedia</h6>
+                                <p style="color: #856404; margin: 0; font-size: 0.875rem;">Modul pembelajaran untuk kursus ini akan ditampilkan di sini ketika tersedia.</p>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -325,14 +399,14 @@
                             Tugas
                         </h5>
 
-                        <?php if (!empty($tasks)): ?>
+                        <?php if (!empty($tasks) && is_array($tasks)): ?>
                             <?php foreach ($tasks as $task): ?>
                                 <div style="background: white; border: 1px solid #dee2e6; border-radius: 0.625rem; margin-bottom: 1rem;">
                                     <div style="background: #f8f9fa; padding: 0.75rem; border-bottom: 1px solid #dee2e6; border-radius: 0.625rem 0.625rem 0 0;">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <h6 style="margin: 0; font-size: 1rem; font-weight: 600;">
                                                 <i class="fas fa-clipboard" style="margin-right: 0.5rem;"></i>
-                                                <?= esc($task['judul_tugas']) ?>
+                                                <?= esc($task['judul_tugas'] ?? 'Tugas Tanpa Judul') ?>
                                             </h6>
                                             <small style="color: #6c757d;">
                                                 <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>
@@ -341,7 +415,7 @@
                                         </div>
                                     </div>
                                     <div style="padding: 1rem;">
-                                        <p style="color: #6c757d; margin-bottom: 1rem;"><?= esc($task['deskripsi']) ?></p>
+                                        <p style="color: #6c757d; margin-bottom: 1rem;"><?= esc($task['deskripsi'] ?? 'Tidak ada deskripsi tugas') ?></p>
 
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <small style="color: #6c757d;">
@@ -384,23 +458,23 @@
                             Quiz
                         </h5>
 
-                        <?php if (!empty($quizzes)): ?>
+                        <?php if (!empty($quizzes) && is_array($quizzes)): ?>
                             <?php foreach ($quizzes as $quiz): ?>
                                 <div style="background: white; border: 1px solid #dee2e6; border-radius: 0.625rem; margin-bottom: 1rem;">
                                     <div style="background: #f8f9fa; padding: 0.75rem; border-bottom: 1px solid #dee2e6; border-radius: 0.625rem 0.625rem 0 0;">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <h6 style="margin: 0; font-size: 1rem; font-weight: 600;">
                                                 <i class="fas fa-question-circle" style="margin-right: 0.5rem;"></i>
-                                                <?= esc($quiz['judul_quiz']) ?>
+                                                <?= esc($quiz['judul_quiz'] ?? 'Quiz Tanpa Judul') ?>
                                             </h6>
                                             <small style="color: #6c757d;">
                                                 <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>
-                                                Durasi: <?= $quiz['durasi_menit'] ?> menit
+                                                Durasi: <?= !empty($quiz['durasi_menit']) ? $quiz['durasi_menit'] : '0' ?> menit
                                             </small>
                                         </div>
                                     </div>
                                     <div style="padding: 1rem;">
-                                        <p style="color: #6c757d; margin-bottom: 1rem;"><?= esc($quiz['deskripsi']) ?></p>
+                                        <p style="color: #6c757d; margin-bottom: 1rem;"><?= esc($quiz['deskripsi'] ?? 'Tidak ada deskripsi quiz') ?></p>
 
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <div>
@@ -410,7 +484,7 @@
                                                 </span>
                                                 <span style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
                                                     <i class="fas fa-percentage" style="margin-right: 0.25rem;"></i>
-                                                    Passing Grade: <?= $quiz['passing_grade'] ?>%
+                                                    Passing Grade: <?= !empty($quiz['passing_grade']) ? $quiz['passing_grade'] : '0' ?>%
                                                 </span>
                                             </div>
                                             <div>
@@ -419,7 +493,7 @@
                                                         <i class="fas fa-check" style="margin-right: 0.25rem;"></i>
                                                         Lulus
                                                     </span>
-                                                    <span style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">Nilai: <?= $quiz['total_nilai'] ?></span>
+                                                    <span style="background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">Nilai: <?= $quiz['total_nilai'] ?? '0' ?></span>
                                                 <?php else: ?>
                                                     <span style="background: #ffc107; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
                                                         <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>

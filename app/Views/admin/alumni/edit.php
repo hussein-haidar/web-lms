@@ -8,7 +8,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Edit Alumni: <?= esc($alumni['nama']) ?></h3>
                     <div class="card-tools">
-                        <a href="<?= base_url('/alumni') ?>" class="btn btn-default btn-sm">
+                        <a href="<?= base_url('/home_superadmin/alumni') ?>" class="btn btn-default btn-sm">
                             <i class="fas fa-arrow-left"></i> Kembali
                         </a>
                     </div>
@@ -26,7 +26,7 @@
                         </div>
                     <?php endif; ?>
 
-                    <form action="<?= base_url('/alumni/update/' . $alumni['id']) ?>" method="post" enctype="multipart/form-data">
+                    <form action="<?= base_url('/home_superadmin/alumni/update/' . $alumni['id']) ?>" method="post" enctype="multipart/form-data">
                         <?= csrf_field() ?>
                         
                         <div class="row">
@@ -176,7 +176,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Simpan Perubahan
                             </button>
-                            <a href="<?= base_url('/alumni') ?>" class="btn btn-secondary">
+                            <a href="<?= base_url('/home_superadmin/alumni') ?>" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Batal
                             </a>
                         </div>

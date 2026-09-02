@@ -54,7 +54,7 @@
                                         </td>
                                         <td><?= esc($item['alamat'] ?? '') ?></td>
                                         <td><?= esc($item['no_telepon'] ?? '') ?></td>
-                                        <td><?= esc($item['email_kontak'] ?? '') ?></td>
+                                        <td><?= esc($item['email'] ?? '') ?></td>
                                         <td><?= esc($item['jam_kerja'] ?? '') ?></td>
                                         <td>
                                             <?php if (!empty($item['url_yt']) && $item['url_yt'] !== 'www.youtube'): ?>

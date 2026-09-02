@@ -117,12 +117,52 @@
                                             <?= (!empty($kursus['materi_yang_dipelajari']) && is_string($kursus['materi_yang_dipelajari'])) ? nl2br(esc($kursus['materi_yang_dipelajari'])) : '<span class="text-muted">Belum ada informasi materi</span>' ?>
                                         </p>
                                     </div>
+                                    
                                     <div class="col-md-6 mb-4">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3">
                                                 <i class="fas fa-clipboard-list fa-lg"></i>
                                             </div>
-                                               </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-1">Quiz</h5>
+                                                <p class="text-muted mb-0">Tes pemahaman materi</p>
+                                            </div>
+                                        </div>
+                                        <div class="mb-0">
+                                            <?php if (!empty($quizzes) && is_array($quizzes)): ?>
+                                                <div class="list-group">
+                                                    <?php foreach ($quizzes as $quiz): ?>
+                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <h6 class="mb-1"><?= esc($quiz['judul_quiz'] ?? 'Quiz Tanpa Judul') ?></h6>
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-clock me-1"></i>
+                                                                    <?= !empty($quiz['durasi_menit']) ? $quiz['durasi_menit'] : '0' ?> menit
+                                                                    <span class="ms-2">
+                                                                        <i class="fas fa-list-ol me-1"></i>
+                                                                        <?= !empty($quiz['soal_json']) ? count(json_decode($quiz['soal_json'], true)) : 0 ?> soal
+                                                                    </span>
+                                                                </small>
+                                                            </div>
+                                                            <div>
+                                                                <?php if ($quiz['is_lulus'] == 1): ?>
+                                                                    <span class="badge bg-success">Lulus</span>
+                                                                    <?php if (!empty($quiz['total_nilai'])): ?>
+                                                                        <span class="badge bg-info ms-1">Nilai: <?= $quiz['total_nilai'] ?></span>
+                                                                    <?php endif; ?>
+                                                                <?php else: ?>
+                                                                    <span class="badge bg-warning">Belum</span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <p class="text-muted mb-0">Belum ada quiz tersedia untuk kursus ini.</p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

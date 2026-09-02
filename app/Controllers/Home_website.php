@@ -14,6 +14,13 @@ use App\Models\M_review;
 use App\Models\M_postingan;
 use App\Models\M_uji_kompetensi;
 use App\Models\M_mitra_kerja;
+use App\Models\M_slider_web;
+use App\Models\M_kursus;
+use App\Models\M_stats;
+use App\Models\M_manajemen;
+use App\Models\M_instruktur;
+use App\Models\M_profil_lpk;
+use App\Models\M_visi_misi;
 
 class Home_website extends BaseController
 {
@@ -27,6 +34,13 @@ class Home_website extends BaseController
     protected $M_postingan;
     protected $M_uji_kompetensi;
     protected $M_mitra_kerja;
+    protected $M_slider_web;
+    protected $M_kursus;
+    protected $M_stats;
+    protected $M_manajemen;
+    protected $M_instruktur;
+    protected $M_profil_lpk;
+    protected $M_visi_misi;
 
     public function __construct()
     {
@@ -41,6 +55,13 @@ class Home_website extends BaseController
         $this->M_postingan = new M_postingan();
         $this->M_uji_kompetensi = new M_uji_kompetensi();
         $this->M_mitra_kerja = new M_mitra_kerja();
+        $this->M_slider_web = new M_slider_web();
+        $this->M_kursus = new M_kursus();
+        $this->M_stats = new M_stats();
+        $this->M_manajemen = new M_manajemen();
+        $this->M_instruktur = new M_instruktur();
+        $this->M_profil_lpk = new M_profil_lpk();
+        $this->M_visi_misi = new M_visi_misi();
     }
 
     public function index()
@@ -113,6 +134,14 @@ class Home_website extends BaseController
         // Ambil data mitra kerja untuk carousel
         $partners_carousel = $this->M_mitra_kerja->getPartnersForCarousel();
 
+        // Ambil data slider promo untuk carousel
+        $sliders = $this->M_slider_web->getActiveSliders();
+
+        // Ambil data stats dari database
+        $stats_data = $this->M_stats->getActiveStats();
+        $stats_row1 = $this->M_stats->getStatsByRow(1);
+        $stats_row2 = $this->M_stats->getStatsByRow(2);
+
         $data = [
             'title'  => 'LPK INASADA',
             'title2' => 'LPK INASADA',
@@ -120,9 +149,55 @@ class Home_website extends BaseController
             'offline' => $offline,
             'recent_posts' => $recent_posts,
             'partners_carousel' => $partners_carousel,
+            'sliders' => $sliders,
+            'stats_data' => $stats_data,
+            'stats_row1' => $stats_row1,
+            'stats_row2' => $stats_row2,
         ];
 
         return view('frontend/web/v_home', $data);
+    }
+
+    public function detail_program($program_type = 'a')
+    {
+        // Fetch program data based on type
+        // Program A: Sekretaris & Administrasi (id_program = 4)
+        // Program B: Desain Grafis (id_program = 4, DKV course)
+        
+        // Ambil data slider web untuk carousel
+        $sliders = $this->M_slider_web->getActiveSliders();
+        
+        $program_id = 4; // Program Profesi 1 Tahun
+        
+        if ($program_type == 'a') {
+            // Program A: Sekretaris & Administrasi Perkantoran
+            $kursus = $this->M_kursus
+                ->where('id_program', $program_id)
+                ->like('nama_kursus', 'Sekretaris')
+                ->first();
+        } else {
+            // Program B: Desain Grafis (DKV)
+            $kursus = $this->M_kursus
+                ->where('id_program', $program_id)
+                ->like('nama_kursus', 'DKV')
+                ->first();
+        }
+        
+        // Fallback if no specific course found
+        if (!$kursus) {
+            $kursus = $this->M_kursus
+                ->where('id_program', $program_id)
+                ->first();
+        }
+
+        $data = [
+            'title' => 'Detail Program - LPK INASABA',
+            'program_type' => $program_type,
+            'kursus' => $kursus,
+            'sliders' => $sliders,
+        ];
+
+        return view('frontend/program/v_detail_program', $data);
     }
 
     public function kls_online()
@@ -372,26 +447,37 @@ class Home_website extends BaseController
 
     public function detail_program_a($id_paket = null)
     {
+        // Ambil data slider web untuk carousel
+        $sliders = $this->M_slider_web->getActiveSliders();
+        
+        // Debug: Tampilkan data sliders
+        // echo '<pre>'; print_r($sliders); echo '</pre>';
+        
         $data = [
             'title' =>  'MATERI LPK INASADA ',
             'title2' => 'MATERI LPK INASADA',
             'kursus' => $this->M_paket
-                ->find($id_paket)
-
+                ->find($id_paket),
+            'sliders' => $sliders,
+            'program_type' => 'a'
         ];
-        return view('frontend/program/v_detail_program_a', $data);
+        return view('frontend/program/v_detail_program', $data);
     }
 
     public function detail_program_b($id_paket = null)
     {
+        // Ambil data slider web untuk carousel
+        $sliders = $this->M_slider_web->getActiveSliders();
+        
         $data = [
             'title' =>  'MATERI LPK INASADA ',
             'title2' => 'MATERI LPK INASADA',
             'kursus' => $this->M_paket
-                ->find($id_paket)
-
+                ->find($id_paket),
+            'sliders' => $sliders,
+            'program_type' => 'b'
         ];
-        return view('frontend/program/v_detail_program_b', $data);
+        return view('frontend/program/v_detail_program', $data);
     }
 
     public function kls_offline()
@@ -589,16 +675,28 @@ class Home_website extends BaseController
         ];
     }
 
-    public function lulusan()
+    public function alumni()
     {
         $alumniModel = new \App\Models\M_alumni();
         
+        // Get alumni data with automatic gambar paths
+        try {
+            $alumni = $alumniModel->getAlumniWithGambar('aktif');
+        } catch (\Exception $e) {
+            // If the query fails, try with basic method
+            try {
+                $alumni = $alumniModel->getAlumni('aktif');
+            } catch (\Exception $e2) {
+                $alumni = [];
+            }
+        }
+        
         $data = [
-            'title' =>  'LULUSAN LPK INASADA ',
-            'title2' => 'LULUSAN LPK INASADA',
-            'alumni' => $alumniModel->where('status', 'aktif')->findAll()
+            'title' =>  'ALUMNI LPK INASADA ',
+            'title2' => 'ALUMNI LPK INASADA',
+            'alumni' => $alumni
         ];
-        return view('frontend/web/v_lulusan', $data);
+        return view('frontend/web/v_alumni', $data);
     }
 
     public function teach_factory()
@@ -674,10 +772,21 @@ class Home_website extends BaseController
 
     public function sejarah()
     {
+        // Get data from database
+        $data_profil = $this->M_profil_lpk->getProfil();
+        $data_manajemen = $this->M_manajemen->getActiveManajemen();
+        $data_instruktur = $this->M_instruktur->getActiveInstruktur();
+        $data_visi = $this->M_visi_misi->getVisi();
+        $data_misi = $this->M_visi_misi->getMisi();
+        
         $data = [
             'title' =>  'PROFIL LPK INASADA ',
             'title2' => 'PROFIL LPK INASADA',
-
+            'profil' => $data_profil,
+            'manajemen' => $data_manajemen,
+            'instruktur' => $data_instruktur,
+            'visi' => $data_visi,
+            'misi' => $data_misi
         ];
         return view('frontend/web/v_sejarah', $data);
     }

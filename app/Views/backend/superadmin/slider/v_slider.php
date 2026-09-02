@@ -46,7 +46,7 @@
                                     <td><?= $index + 1 ?></td>
                                     <td>
                                         <?php if (!empty($item['gambar_slider'])): ?>
-                                            <img src="<?= base_url('slider/' . ($item['gambar_slider'] ?? '')) ?>"
+                                            <img src="<?= base_url('uploads/slider_promo/' . ($item['gambar_slider'] ?? '')) ?>"
                                                 width="80"
                                                 class="img-thumbnail"
                                                 alt="<?= esc($item['judul_slider']) ?>">
@@ -123,6 +123,12 @@
                 const id_slider = this.dataset.id;
                 const urutan = this.value;
 
+                // Create form data for POST request
+                const formData = new FormData();
+                formData.append('id_slider', id_slider);
+                formData.append('urutan', urutan);
+                formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
                 Swal.fire({
                     title: 'Perbarui Urutan?',
                     text: 'Apakah Anda yakin ingin mengubah urutan slider ini?',
@@ -134,28 +140,21 @@
                     if (result.isConfirmed) {
                         fetch('<?= base_url('home_superadmin/update_order_slider') ?>', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '<?= csrf_hash() ?>'
-                                },
-                                body: JSON.stringify({
-                                    id_slider: id_slider,
-                                    urutan: urutan,
-                                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                                })
+                                body: formData
                             })
                             .then(response => response.json())
                             .then(data => {
-                                if (data.success) {
-                                    Swal.fire('Berhasil!', data.message, 'success');
+                                if (data.status === 'success') {
+                                    Swal.fire('Berhasil!', 'Urutan slider berhasil diperbarui.', 'success');
                                     setTimeout(() => {
                                         location.reload();
                                     }, 1000);
                                 } else {
-                                    Swal.fire('Gagal!', data.message, 'error');
+                                    Swal.fire('Gagal!', 'Gagal memperbarui urutan slider.', 'error');
                                 }
                             })
                             .catch(error => {
+                                console.error('Error:', error);
                                 Swal.fire('Error!', 'Terjadi kesalahan saat memperbarui urutan.', 'error');
                             });
                     }
@@ -169,28 +168,27 @@
                 const id_slider = this.dataset.id;
                 const btnEl = this;
 
+                // Create form data for POST request
+                const formData = new FormData();
+                formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
                 fetch('<?= base_url('home_superadmin/toggle_status_slider/') ?>' + id_slider, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '<?= csrf_hash() ?>'
-                        },
-                        body: JSON.stringify({
-                            '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                        })
+                        body: formData
                     })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
-                            Swal.fire('Berhasil!', data.message, 'success');
+                        if (data.status === 'success') {
+                            Swal.fire('Berhasil!', 'Status slider berhasil diubah.', 'success');
                             setTimeout(() => {
                                 location.reload();
                             }, 1000);
                         } else {
-                            Swal.fire('Gagal!', data.message, 'error');
+                            Swal.fire('Gagal!', 'Gagal mengubah status slider.', 'error');
                         }
                     })
                     .catch(error => {
+                        console.error('Error:', error);
                         Swal.fire('Error!', 'Terjadi kesalahan saat mengubah status.', 'error');
                     });
             });

@@ -50,7 +50,7 @@
                                             <h6 class="fw-bold mb-0">Program Profesi 1 Tahun</h6>
                                         </div>
                                         <!-- Program A: Sekretaris & Admin -->
-                                        <a href="<?= base_url('home_website/detail_program_a') ?>"
+                                        <a href="<?= base_url('detail_program/a') ?>"
                                             class="d-flex align-items-center p-3 mb-2 rounded text-decoration-none text-dark"
                                             style="transition: 0.2s; border: 1px solid transparent;"
                                             onmouseover="this.style.backgroundColor='#f0f8ff'; this.style.borderColor='#e0e0e0'"
@@ -65,7 +65,7 @@
                                         </a>
 
                                         <!-- Program B: Desain Grafis -->
-                                        <a href="<?= base_url('home_website/detail_program_b') ?>"
+                                        <a href="<?= base_url('detail_program/b') ?>"
                                             class="d-flex align-items-center p-3 mb-2 rounded text-decoration-none text-dark"
                                             style="transition: 0.2s; border: 1px solid transparent;"
                                             onmouseover="this.style.backgroundColor='#f0f8ff'; this.style.borderColor='#e0e0e0'"
@@ -328,7 +328,7 @@
                             </li>
                             <li>
                                 <a class="d-flex align-items-center p-3 rounded text-decoration-none text-dark"
-                                    href="<?= base_url('home_website/lulusan') ?>"
+                                    href="<?= base_url('alumni_show') ?>"
                                     style="transition: 0.2s;"
                                     onmouseover="this.style.backgroundColor='#f0f8ff'"
                                     onmouseout="this.style.backgroundColor='transparent'">
@@ -336,28 +336,11 @@
                                         <i class="fas fa-user-graduate"></i>
                                     </div>
                                     <div>
-                                        <h6 class="fw-bold mb-0">Profil Lulusan</h6>
+                                        <h6 class="fw-bold mb-0">Alumni</h6>
                                     </div>
                                 </a>
                             </li>
-                            <li>
-                                <a class="d-flex align-items-center p-3 rounded text-decoration-none text-dark"
-                                    href="<?= base_url('home_website/teach_factory') ?>"
-                                    style="transition: 0.2s;"
-                                    onmouseover="this.style.backgroundColor='#f0f8ff'"
-                                    onmouseout="this.style.backgroundColor='transparent'">
-                                    <div class="bg-warning bg-opacity-10 text-warning rounded p-2 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                        <i class="fas fa-user-graduate"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="fw-bold mb-0">Ruang Printing</h6>
-                                    </div>
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
+                                                 <li>
                                 <a class="d-flex align-items-center p-3 rounded text-decoration-none text-dark"
                                     href="<?= base_url('home_website/kontak_saran') ?>"
                                     style="transition: 0.2s;"
@@ -408,7 +391,7 @@
                                 </li>
                                 <!-- MENU KURSUS SAYA -->
                                 <li>
-                                    <a class="dropdown-item p-2 rounded" href="<?= base_url('home_siswa/v_kursus') ?>">
+                                    <a class="dropdown-item p-2 rounded" href="<?= base_url('home_siswa/kursus_saya') ?>">
                                         <i class="fas fa-book me-2 text-success"></i> Kursus Saya
                                     </a>
                                 </li>
@@ -531,11 +514,11 @@
                     <h3 class="text-white">InaSaba</h3>
                     <p class="text-white-50">Lembaga Kursus Komputer terkemuka dengan pengalaman 25 tahun dalam mendidik dan mengedukasi masyarakat.</p>
                     <div class="d-flex gap-2">
-                        <a href="#" class="text-white"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
-                        <a href="#" class="text-white"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.facebook.com/" target="_blank" rel="noopener" class="text-white" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/" target="_blank" rel="noopener" class="text-white" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="https://twitter.com/" target="_blank" rel="noopener" class="text-white" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.youtube.com/" target="_blank" rel="noopener" class="text-white" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="tel:+62857967408" class="text-white" aria-label="Telepon / WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3">
@@ -553,11 +536,11 @@
                 <div class="col-md-3 mb-3">
                     <h3 class="text-white">Quick Links</h3>
                     <ul class="list-unstyled text-white-50">
-                        <li class="mb-2"><i class="fas fa-chevron-right me-2"></i> Tentang Kami</li>
-                        <li class="mb-2"><i class="fas fa-chevron-right me-2"></i> Program Kursus</li>
-                        <li class="mb-2"><i class="fas fa-chevron-right me-2"></i> Galeri Kegiatan</li>
-                        <li class="mb-2"><i class="fas fa-chevron-right me-2"></i> Testimoni Alumni</li>
-                        <li class="mb-2"><i class="fas fa-chevron-right me-2"></i> Hubungi Kami</li>
+                        <li class="mb-2"><a href="<?= base_url('home_website/sejarah') ?>" class="text-white-50 text-decoration-none"><i class="fas fa-chevron-right me-2"></i> Tentang Kami</a></li>
+                        <li class="mb-2"><a href="<?= base_url('home_website/kls_online') ?>" class="text-white-50 text-decoration-none"><i class="fas fa-chevron-right me-2"></i> Program Kursus</a></li>
+                        <li class="mb-2"><a href="<?= base_url('home_website/galeri') ?>" class="text-white-50 text-decoration-none"><i class="fas fa-chevron-right me-2"></i> Galeri Kegiatan</a></li>
+                        <li class="mb-2"><a href="<?= base_url('alumni_show') ?>" class="text-white-50 text-decoration-none"><i class="fas fa-chevron-right me-2"></i> Testimoni Alumni</a></li>
+                        <li class="mb-2"><a href="<?= base_url('home_website/kontak') ?>" class="text-white-50 text-decoration-none"><i class="fas fa-chevron-right me-2"></i> Hubungi Kami</a></li>
                     </ul>
                 </div>
             </div>
@@ -574,31 +557,35 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const counters = document.querySelectorAll('.counter');
-            counters.forEach(counter => {
-                const target = parseInt(counter.getAttribute('data-target'));
-                const suffix = counter.getAttribute('data-suffix') || '';
-                const duration = 2000;
-                const step = Math.ceil(target / (duration / 16));
-                let current = 0;
-                const updateCount = () => {
-                    current += step;
-                    if (current >= target) {
-                        counter.textContent = target.toLocaleString('id-ID') + suffix;
-                    } else {
-                        counter.textContent = current.toLocaleString('id-ID') + suffix;
-                        requestAnimationFrame(updateCount);
-                    }
-                };
-                const observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting) {
-                        updateCount();
-                        observer.unobserve(counter);
-                    }
-                }, {
-                    threshold: 0.5
+            
+            // Only run counter animation if counter elements exist
+            if (counters.length > 0) {
+                counters.forEach(counter => {
+                    const target = parseInt(counter.getAttribute('data-target'));
+                    const suffix = counter.getAttribute('data-suffix') || '';
+                    const duration = 2000;
+                    const step = Math.ceil(target / (duration / 16));
+                    let current = 0;
+                    const updateCount = () => {
+                        current += step;
+                        if (current >= target) {
+                            counter.textContent = target.toLocaleString('id-ID') + suffix;
+                        } else {
+                            counter.textContent = current.toLocaleString('id-ID') + suffix;
+                            requestAnimationFrame(updateCount);
+                        }
+                    };
+                    const observer = new IntersectionObserver((entries) => {
+                        if (entries[0].isIntersecting) {
+                            updateCount();
+                            observer.unobserve(counter);
+                        }
+                    }, {
+                        threshold: 0.5
+                    });
+                    observer.observe(counter);
                 });
-                observer.observe(counter);
-            });
+            }
         });
     </script>
 

@@ -65,9 +65,9 @@
                             $jumlahBayar = 0;
                             $daftarNotifikasi = [];
 
-                            // Ambil SEMUA pembayaran pending untuk staf admin
+                            // Ambil SEMUA pembayaran pending dan failed untuk staf admin
                             $pembayaranModel = new \App\Models\M_pembayaran();
-                            $daftarNotifikasi = $pembayaranModel->get_notifikasi_pembayaran(null); // null = semua pending
+                            $daftarNotifikasi = $pembayaranModel->get_notifikasi_pembayaran(null, 10, ['pending', 'failed']); // hanya pending dan failed
                             $jumlahBayar = count($daftarNotifikasi);
                             ?>
                             <li class="dropdown notifications-menu">
@@ -223,7 +223,7 @@
                                             </a>
                                         </div>
                                         <div class="pull-right">
-                                            <form id="logout-form" action="<?= base_url('auth_login/logout') ?>" method="POST" style="display: inline;">
+                                            <form id="logout-form" action="<?= base_url('auth_login/logout_karyawan') ?>" method="POST" style="display: inline;">
                                                 <?= csrf_field() ?>
                                                 <button type="submit" class="btn btn-default btn-flat" id="logout-btn">
                                                     <i class="fa fa-fw fa-sign-out"></i>&nbsp;Sign Out
@@ -327,8 +327,8 @@
                                         <i class="fa fa-circle-o"></i> Setting Web
                                     </a>
                                 </li>
-                                <li class="<?= ($current_page == 'home_superadmin/slider') ? 'active' : '' ?>">
-                                    <a href="<?= base_url('home_superadmin/slider') ?>" class="preserve-filter">
+                                <li class="<?= ($current_page == 'home_superadmin/slider_promo') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/slider_promo') ?>" class="preserve-filter">
                                         <i class="fa fa-circle-o"></i> Slider Promo
                                     </a>
                                 </li>
@@ -367,6 +367,16 @@
                                         <i class="fa fa-circle-o"></i> Uji Kompetensi
                                     </a>
                                 </li>
+                                <li class="<?= ($current_page == 'home_superadmin/galeri_uji_kompetensi') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/galeri_uji_kompetensi') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Galeri Uji Kompetensi
+                                    </a>
+                                </li>
+                                <li class="<?= ($current_page == 'home_superadmin/stats') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/stats') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Statistik Web
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
@@ -377,12 +387,12 @@
                                 <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                             </a>
                             <ul class="treeview-menu">
-                                <li class="<?= ($current_page == 'home_superadmin/lulusan') ? 'active' : '' ?>">
-                                    <a href="<?= base_url('home_superadmin/lulusan') ?>" class="preserve-filter">
-                                        <i class="fa fa-circle-o"></i> Data Lulusan
+                                <li class="<?= ($current_page == 'home_superadmin/alumni') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/alumni') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Data Alumni
                                     </a>
                                 </li>
-                                                               <li class="<?= ($current_page == 'home_superadmin/mitra_kerja') ? 'active' : '' ?>">
+                                <li class="<?= ($current_page == 'home_superadmin/mitra_kerja') ? 'active' : '' ?>">
                                     <a href="<?= base_url('home_superadmin/mitra_kerja') ?>" class="preserve-filter">
                                         <i class="fa fa-circle-o"></i> Mitra Kerja
                                     </a>
@@ -412,6 +422,16 @@
                                         <i class="fa fa-circle-o"></i> Daftar Paket Kursus
                                     </a>
                                 </li>
+                                <li class="<?= ($current_page == 'home_superadmin/bank_soal') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/bank_soal') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Bank Soal
+                                    </a>
+                                </li>
+                                <li class="<?= ($current_page == 'home_superadmin/gradebook') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/gradebook') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Gradebook
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
@@ -425,6 +445,36 @@
                                 <li class="<?= ($current_page == 'home_superadmin/karyawan') ? 'active' : '' ?>">
                                     <a href="<?= base_url('home_superadmin/karyawan') ?>" class="preserve-filter">
                                         <i class="fa fa-circle-o"></i> Daftar Karyawan
+                                    </a>
+                                </li>
+                                <li class="<?= ($current_page == 'home_superadmin/manajemen') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/manajemen') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Manajemen LPK
+                                    </a>
+                                </li>
+                                <li class="<?= ($current_page == 'home_superadmin/instruktur') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/instruktur') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Instruktur
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="header">PROFIL LPK</li>
+                        <li class="treeview">
+                            <a href="#">
+                                <i class="fa fa-building"></i> <span>PROFIL LPK</span>
+                                <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
+                            </a>
+                            <ul class="treeview-menu">
+                                <li class="<?= ($current_page == 'home_superadmin/profil_lpk') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/profil_lpk') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Profil LPK
+                                    </a>
+                                </li>
+                                <li class="<?= ($current_page == 'home_superadmin/visi_misi') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_superadmin/visi_misi') ?>" class="preserve-filter">
+                                        <i class="fa fa-circle-o"></i> Visi & Misi
                                     </a>
                                 </li>
                             </ul>
@@ -461,6 +511,13 @@
                         <li class="<?= ($current_page == 'home_karyawan/pembayaran') ? 'active' : '' ?>">
                             <a href="<?= base_url('home_karyawan/pembayaran') ?>" class="preserve-filter">
                                 <i class="fa fa-money"></i> <span>Verifikasi Pembayaran</span>
+                            </a>
+                        </li>
+
+                        <li class="header">AKADEMIK</li>
+                        <li class="<?= ($current_page == 'staf/jadwal') ? 'active' : '' ?>">
+                            <a href="<?= base_url('staf/jadwal') ?>" class="preserve-filter">
+                                <i class="fa fa-calendar"></i> <span>Manajemen Jadwal</span>
                             </a>
                         </li>
 
@@ -529,9 +586,98 @@
 
                         <!-- Tambahan Menu Pembayaran & Sertifikat untuk Pengajar -->
                         <li class="header">SERTIFIKAT</li>
-                        <li class="<?= ($current_page == 'sertifikat/admin_index') ? 'active' : '' ?>">
-                            <a href="<?= base_url('sertifikat/admin_index') ?>" class="preserve-filter">
+                        <li class="<?= ($current_page == 'sertifikat/admin') ? 'active' : '' ?>">
+                            <a href="<?= base_url('sertifikat/admin') ?>" class="preserve-filter">
                                 <i class="fa fa-certificate"></i> <span>Generate Sertifikat</span>
+                            </a>
+                        </li>
+
+                        <li class="header">AKADEMIK</li>
+                        <li class="<?= ($current_page == 'staf/jadwal') ? 'active' : '' ?>">
+                            <a href="<?= base_url('staf/jadwal') ?>" class="preserve-filter">
+                                <i class="fa fa-calendar"></i> <span>Manajemen Jadwal</span>
+                            </a>
+                        </li>
+
+                        <li class="<?= ($current_page == 'staf/jadwal') ? 'active' : '' ?>">
+                            <a href="<?= base_url('staf/jadwal') ?>" class="preserve-filter">
+                                <i class="fa fa-calendar"></i> <span>Manajemen Jadwal</span>
+                            </a>
+                        </li>
+
+                    <?php elseif ($level == 'siswa'): ?>
+                        <!-- SISWA MENU -->
+                        <li class="<?= ($current_page == 'home_siswa' || $current_page == 'home_siswa/index') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa') ?>" class="preserve-filter">
+                                <i class="fa fa-dashboard"></i> <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="header">PEMBELAJARAN</li>
+                        <li class="<?= ($current_page == 'home_siswa/kursus_saya') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/kursus_saya') ?>" class="preserve-filter">
+                                <i class="fa fa-book"></i> <span>Kursus Saya</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/kursus/tersedia') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/kursus/tersedia') ?>" class="preserve-filter">
+                                <i class="fa fa-search"></i> <span>Kursus Tersedia</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/v_tugas') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/v_tugas') ?>" class="preserve-filter">
+                                <i class="fa fa-pencil-square-o"></i> <span>Tugas</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/progress') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/progress') ?>" class="preserve-filter">
+                                <i class="fa fa-line-chart"></i> <span>Nilai &amp; Progress</span>
+                            </a>
+                        </li>
+
+                        <li class="header">AKADEMIK</li>
+                        <li class="<?= ($current_page == 'home_siswa/jadwal') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/jadwal') ?>" class="preserve-filter">
+                                <i class="fa fa-calendar"></i> <span>Jadwal / Kalender</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/diskusi') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/kursus_saya') ?>" class="preserve-filter">
+                                <i class="fa fa-comments"></i> <span>Forum Diskusi</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/chat') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/chat') ?>" class="preserve-filter">
+                                <i class="fa fa-wechat"></i> <span>Chat Mentor</span>
+                            </a>
+                        </li>
+
+                        <li class="header">TRANSAKSI</li>
+                        <li class="<?= ($current_page == 'home_siswa/status_bayar') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/status_bayar') ?>" class="preserve-filter">
+                                <i class="fa fa-money"></i> <span>Status Bayar</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/riwayat_beli') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/riwayat_beli') ?>" class="preserve-filter">
+                                <i class="fa fa-history"></i> <span>Riwayat Beli</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'sertifikat') ? 'active' : '' ?>">
+                            <a href="<?= base_url('sertifikat') ?>" class="preserve-filter">
+                                <i class="fa fa-certificate"></i> <span>Sertifikat Saya</span>
+                            </a>
+                        </li>
+
+                        <li class="header">LAINNYA</li>
+                        <li class="<?= ($current_page == 'home_siswa/notifikasi') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/notifikasi') ?>" class="preserve-filter">
+                                <i class="fa fa-bell"></i> <span>Notifikasi</span>
+                            </a>
+                        </li>
+                        <li class="<?= ($current_page == 'home_siswa/profil') ? 'active' : '' ?>">
+                            <a href="<?= base_url('home_siswa/profil') ?>" class="preserve-filter">
+                                <i class="fa fa-user"></i> <span>Profil Saya</span>
                             </a>
                         </li>
 
@@ -548,8 +694,8 @@
                                 <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                             </a>
                             <ul class="treeview-menu">
-                                <li class="<?= ($current_page == 'home_superadmin/inventory') ? 'active' : '' ?>">
-                                    <a href="<?= base_url('home_superadmin/inventory') ?>" class="preserve-filter">
+                                <li class="<?= ($current_page == 'home_karyawan/inventory') ? 'active' : '' ?>">
+                                    <a href="<?= base_url('home_karyawan/inventory') ?>" class="preserve-filter">
                                         <i class="fa fa-circle-o"></i> Inventory
                                     </a>
                                 </li>
@@ -933,13 +1079,14 @@
                 case 'staf_admin':
                 case 'pengajar':
                 case 'teknisi':
+                case 'karyawan':
                     logoutUrl = '<?= base_url('auth_login/logout_karyawan') ?>';
                     break;
                 case 'siswa':
                     logoutUrl = '<?= base_url('auth_login/logout_siswa') ?>';
                     break;
                 default:
-                    logoutUrl = '<?= base_url('auth_login/logout') ?>';
+                    logoutUrl = '<?= base_url('auth_login/logout_karyawan') ?>';
             }
             $('#logout-form-modal').attr('action', logoutUrl);
             $('#logout-btn').on('click', function(e) {

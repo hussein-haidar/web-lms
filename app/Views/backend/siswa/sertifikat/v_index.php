@@ -146,6 +146,10 @@
                                                 class="btn btn-info btn-sm" target="_blank" title="Lihat">
                                                 <i class="fa fa-eye"></i>
                                             </a>
+                                            <a href="<?= base_url('sertifikat/print/' . $cert['id_sertifikat']) ?>"
+                                                class="btn btn-primary btn-sm" target="_blank" title="Cetak/Print">
+                                                <i class="fa fa-print"></i>
+                                            </a>
                                             <a href="<?= base_url('sertifikat/download/' . $cert['id_sertifikat']) ?>"
                                                 class="btn btn-success btn-sm" title="Download">
                                                 <i class="fa fa-download"></i>

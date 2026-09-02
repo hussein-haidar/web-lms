@@ -37,9 +37,9 @@
                             </div>
                         </div>
                         <div class="cert-footer">
-                            <button class="btn btn-default btn-sm" onclick="alert('Fitur cetak akan segera hadir!')">
+                            <a href="<?= base_url('sertifikat/print/' . $c['id_sertifikat']) ?>" target="_blank" class="btn btn-default btn-sm">
                                 <i class="fas fa-print me-1"></i> Print
-                            </button>
+                            </a>
                             <a href="<?= base_url('sertifikat/view/' . $c['id_sertifikat']) ?>" class="btn btn-primary btn-sm rounded-pill px-3">
                                 <i class="fas fa-eye me-1"></i> View
                             </a>

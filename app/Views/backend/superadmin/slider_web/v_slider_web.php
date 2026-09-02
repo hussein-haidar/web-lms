@@ -46,7 +46,7 @@
                                     <td><?= $index + 1 ?></td>
                                     <td>
                                         <?php if (!empty($item['gambar_slider'])): ?>
-                                            <img src="<?= base_url('public/gambar_slider/' . $item['gambar_slider']) ?>"
+                                            <img src="<?= base_url('uploads/slider_web/' . $item['gambar_slider']) ?>"
                                                 width="100"
                                                 class="img-thumbnail"
                                                 alt="<?= esc($item['judul_slider']) ?>"
@@ -128,6 +128,12 @@
                 const id_slider = this.dataset.id;
                 const urutan = this.value;
 
+                // Create form data for POST request
+                const formData = new FormData();
+                formData.append('id_slider', id_slider);
+                formData.append('urutan', urutan);
+                formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
                 Swal.fire({
                     title: 'Perbarui Urutan?',
                     text: 'Apakah Anda yakin ingin mengubah urutan slider ini?',
@@ -139,15 +145,7 @@
                     if (result.isConfirmed) {
                         fetch('<?= base_url('home_superadmin/update_order_slider_web') ?>', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '<?= csrf_hash() ?>'
-                                },
-                                body: JSON.stringify({
-                                    id_slider: id_slider,
-                                    urutan: urutan,
-                                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                                })
+                                body: formData
                             })
                             .then(response => response.json())
                             .then(data => {
@@ -161,6 +159,7 @@
                                 }
                             })
                             .catch(error => {
+                                console.error('Error:', error);
                                 Swal.fire('Error!', 'Terjadi kesalahan saat memperbarui urutan.', 'error');
                             });
                     } else {
@@ -176,15 +175,13 @@
             btn.addEventListener('click', function() {
                 const id_slider = this.dataset.id;
 
+                // Create form data for POST request
+                const formData = new FormData();
+                formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
                 fetch('<?= base_url('home_superadmin/toggle_status_slider_web/') ?>' + id_slider, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '<?= csrf_hash() ?>'
-                        },
-                        body: JSON.stringify({
-                            '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                        })
+                        body: formData
                     })
                     .then(response => response.json())
                     .then(data => {
@@ -198,6 +195,7 @@
                         }
                     })
                     .catch(error => {
+                        console.error('Error:', error);
                         Swal.fire('Error!', 'Terjadi kesalahan saat mengubah status.', 'error');
                     });
             });

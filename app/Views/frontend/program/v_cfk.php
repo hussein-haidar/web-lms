@@ -8,7 +8,7 @@
             <img src="<?= base_url('/gambar_kursus/jk.png') ?>"
                 class="d-block w-100"
                 alt="Program Profesi 1 Tahun"
-                style="height: 450px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8);">
+                style="height: 300px; object-fit: contain; background: linear-gradient(135deg, #0056b3, #00b4d8);">
         </div>
     </div>
 </div>

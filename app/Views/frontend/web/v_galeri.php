@@ -16,7 +16,6 @@
                                     <div class="position-relative overflow-hidden rounded shadow-sm ratio ratio-4x3">
                                         <img src="<?= base_url('/galeri/bd(1).png') ?>" class="w-100 h-100 object-fit-cover" alt="Studio Broadcast WPITV">
                                         <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-50 p-3">
-
                                         </div>
                                     </div>
                                 </div>

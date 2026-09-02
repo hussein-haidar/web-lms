@@ -232,6 +232,14 @@ class M_postingan extends Model
         }
     }
 
+    // ✅ GET ALL POSTINGAN
+    public function getPostinganAll()
+    {
+        return $this->where('deleted_at IS NULL')
+                   ->orderBy('created_at', 'DESC')
+                   ->findAll();
+    }
+
     // Get only deleted records
     public function onlyDeleted()
     {

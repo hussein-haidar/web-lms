@@ -35,6 +35,12 @@
                         <i class="fa fa-plus-circle"></i> Tambah
                     </a>
 
+                    <!-- Lihat Data Dihapus -->
+                    <a href="<?= base_url('home_superadmin/paket_kursus_deleted') ?>"
+                        class="btn btn-sm btn-secondary" style="margin-right: 5px;">
+                        <i class="fa fa-trash"></i> Data Dihapus
+                    </a>
+
                     <!-- Reset Button -->
                     <a href="<?= base_url('home_superadmin/paket_kursus') ?>"
                         class="btn btn-sm btn-default">

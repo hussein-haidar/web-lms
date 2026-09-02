@@ -33,13 +33,13 @@
         <!-- Info tambahan -->
         <div class="alert alert-info mt-3">
             <i class="fa fa-info-circle"></i>
-            Backup akan disimpan di folder: <code>writable/backup/</code><br>
+            Backup akan disimpan di folder: <code>writable/backups/</code><br>
             Format file: <code>backup_YYYY-MM-DD_HH-MM-SS.sql</code>
         </div>
 
         <!-- Form untuk trigger proses backup -->
         <form id="backup-form" action="<?= base_url('home_superadmin/proses_db') ?>" method="post">
-            <!-- ✅ CSRF TOKEN -->
+            <!-- CSRF TOKEN -->
             <?= csrf_field() ?>
 
             <button type="submit" class="btn btn-sm btn-success" onclick="return confirmBackupDatabase()">
@@ -49,7 +49,7 @@
 
         <!-- Daftar Backup yang Sudah Ada -->
         <?php
-        $backupPath = WRITEPATH . 'backup/';
+        $backupPath = WRITEPATH . 'backups/';
         if (is_dir($backupPath)) {
             $files = array_diff(scandir($backupPath), ['.', '..']);
             $files = array_reverse($files); // Urutkan dari yang terbaru
@@ -116,7 +116,7 @@
 function confirmBackupDatabase() {
     Swal.fire({
         title: 'Konfirmasi Backup Database',
-        text: 'Apakah Anda yakin ingin melakukan backup database? Backup akan disimpan di folder writable/backup/',
+        text: 'Apakah Anda yakin ingin melakukan backup database? Backup akan disimpan di folder writable/backups/',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#28a745',
