@@ -229,8 +229,15 @@
                                                 <span style="font-weight: 500;">Progress Video</span>
                                                 <span id="videoTime">00:00 / 00:00</span>
                                             </div>
-                                            <div style="background: #e9ecef; border-radius: 0.25rem; height: 8px; margin-bottom: 1rem;">
+                                            <div style="background: #e9ecef; border-radius: 0.25rem; height: 8px; margin-bottom: 0.5rem;">
                                                 <div id="progressBar" style="background: #007bff; height: 100%; width: 0%; border-radius: 0.25rem; transition: width 0.3s;"></div>
+                                            </div>
+                                            <!-- Milestone indicators -->
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 0.7rem; color: #999;">
+                                                <span id="ms25" style="opacity:0.4;">25%</span>
+                                                <span id="ms50" style="opacity:0.4;">50%</span>
+                                                <span id="ms75" style="opacity:0.4;">75%</span>
+                                                <span id="ms100" style="opacity:0.4;">100%</span>
                                             </div>
                                             <div style="text-align: center;">
                                                 <button id="markVideoComplete" onclick="markVideoAsCompleted()" style="background: #28a745; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 1rem;">
@@ -293,6 +300,9 @@
                                                 `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')} / ${durationMinutes.toString().padStart(2, '0')}:${durationSeconds.toString().padStart(2, '0')}`;
                                         }
                                         
+                                        // Send progress at milestones: 25%, 50%, 75%, 100%
+                                        sendProgressMilestone(Math.floor(progress));
+                                        
                                         // Auto-mark as complete jika 80% atau lebih
                                         if (progress >= 80 && !videoWatched) {
                                             videoWatched = true;
@@ -306,6 +316,46 @@
                                             clearInterval(interval);
                                         }
                                     }, 1000);
+                                }
+                                
+                                // Send progress at milestones
+                                let lastMilestone = 0;
+                                function sendProgressMilestone(progress) {
+                                    var milestone = 0;
+                                    if (progress >= 100 && lastMilestone < 100) milestone = 100;
+                                    else if (progress >= 75 && lastMilestone < 75) milestone = 75;
+                                    else if (progress >= 50 && lastMilestone < 50) milestone = 50;
+                                    else if (progress >= 25 && lastMilestone < 25) milestone = 25;
+                                    
+                                    if (milestone > 0) {
+                                        lastMilestone = milestone;
+                                        // Update milestone indicator
+                                        var msEl = document.getElementById('ms' + milestone);
+                                        if (msEl) {
+                                            msEl.style.opacity = '1';
+                                            msEl.style.fontWeight = 'bold';
+                                            msEl.style.color = '#28a745';
+                                        }
+                                        const formData = new URLSearchParams({
+                                            '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+                                            id_pendaftaran: <?= $pendaftaran['id_pendaftaran'] ?>,
+                                            id_materi: <?= $materi_aktif['id_materi'] ?? 0 ?>,
+                                            progress_percent: milestone,
+                                            is_completed: milestone >= 100 ? 1 : 0
+                                        });
+                                        fetch('<?= base_url('home_siswa/update_progres') ?>', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/x-www-form-urlencoded',
+                                                'X-Requested-With': 'XMLHttpRequest'
+                                            },
+                                            body: formData
+                                        }).then(r => r.json()).then(data => {
+                                            if (data.status === 'success') {
+                                                console.log('Progress updated: ' + milestone + '%');
+                                            }
+                                        }).catch(e => console.error('Progress update failed:', e));
+                                    }
                                 }
                                 
                                 // Mulai tracking saat halaman dimuat
@@ -608,6 +658,9 @@
                                         readingProgress = Math.min(scrollPercentage, 100);
                                         readingProgressBar.style.width = readingProgress + '%';
                                         
+                                        // Send progress at milestones: 25%, 50%, 75%, 100%
+                                        sendReadingMilestone(Math.floor(readingProgress));
+                                        
                                         // Auto-mark as complete if scrolled to 80% or read for 5 minutes
                                         if ((readingProgress >= 80 || minutes >= 5) && !textCompleted) {
                                             textCompleted = true;
@@ -626,7 +679,39 @@
                                 }
                             });
                             
-                            function markTextAsCompleted() {
+                            // Send reading progress at milestones
+                                let lastReadingMilestone = 0;
+                                function sendReadingMilestone(progress) {
+                                    var milestone = 0;
+                                    if (progress >= 100 && lastReadingMilestone < 100) milestone = 100;
+                                    else if (progress >= 75 && lastReadingMilestone < 75) milestone = 75;
+                                    else if (progress >= 50 && lastReadingMilestone < 50) milestone = 50;
+                                    else if (progress >= 25 && lastReadingMilestone < 25) milestone = 25;
+                                    
+                                    if (milestone > 0) {
+                                        lastReadingMilestone = milestone;
+                                        fetch('<?= base_url('home_siswa/update_progres') ?>', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/x-www-form-urlencoded',
+                                                'X-Requested-With': 'XMLHttpRequest'
+                                            },
+                                            body: new URLSearchParams({
+                                                '<?= csrf_token() ?>': '<?= csrf_hash() ?>',
+                                                id_pendaftaran: <?= $pendaftaran['id_pendaftaran'] ?>,
+                                                id_materi: <?= $materi_aktif['id_materi'] ?? 0 ?>,
+                                                progress_percent: milestone,
+                                                is_completed: milestone >= 100 ? 1 : 0
+                                            })
+                                        }).then(r => r.json()).then(data => {
+                                            if (data.status === 'success') {
+                                                console.log('Reading progress updated: ' + milestone + '%');
+                                            }
+                                        }).catch(e => console.error('Reading progress failed:', e));
+                                    }
+                                }
+                                
+                                function markTextAsCompleted() {
                                 console.log('Marking text as completed...');
                                 if (confirm('Apakah Anda yakin sudah menyelesaikan materi ini?')) {
                                     fetch('<?= base_url('home_siswa/update_progres') ?>', {

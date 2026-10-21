@@ -1499,6 +1499,7 @@ class Home_siswa extends BaseController
         $id_materi = $this->request->getPost('id_materi');
         $last_position = $this->request->getPost('last_position');
         $is_completed = $this->request->getPost('is_completed');
+        $progress_percent = $this->request->getPost('progress_percent');
 
         // Log input for debugging
         log_message('debug', 'update_progres called: id_pendaftaran=' . $id_pendaftaran . ', id_materi=' . $id_materi . ', is_completed=' . $is_completed);
@@ -1516,9 +1517,17 @@ class Home_siswa extends BaseController
         ];
 
         try {
-            // Update progress
-            $updateResult = $this->M_progres_materi->updateProgres($id_pendaftaran, $id_materi, $data);
-            log_message('debug', 'Progress update result: ' . json_encode($updateResult));
+            // Use updateProgressPercent if progress_percent is provided
+            if ($progress_percent !== null && $progress_percent !== '') {
+                $this->M_progres_materi->updateProgressPercent($id_pendaftaran, $id_materi, $progress_percent);
+            } else {
+                $data = [
+                    'last_position' => $last_position ?? 0,
+                    'is_completed' => $is_completed ?? 0,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+                $this->M_progres_materi->updateProgres($id_pendaftaran, $id_materi, $data);
+            }
             
             // Update total progress
             $this->update_total_progress($id_pendaftaran);
