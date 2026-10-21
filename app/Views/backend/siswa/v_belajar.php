@@ -183,7 +183,7 @@
                                 if ($video_id) {
                                     $video_id = explode('&', $video_id)[0];
                                     $video_id = explode('#', $video_id)[0];
-                                    $embed_url = "https://www.youtube.com/embed/{$video_id}?rel=0&showinfo=0&controls=1&modestbranding=1";
+                                    $embed_url = "https://www.youtube.com/embed/{$video_id}?rel=0&showinfo=0&controls=1&modestbranding=1&enablejsapi=1";
                                 }
                             }
                             ?>
@@ -193,6 +193,7 @@
                                 <div class="video-container">
                                     <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0.5rem; background: #000;">
                                         <iframe 
+                                            id="videoPlayer"
                                             src="<?= $embed_url ?>" 
                                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
                                             frameborder="0"
@@ -271,16 +272,56 @@
                                     }
                                 }, 2000);
                                 
-                                // Fallback tracking tanpa YouTube API
-                                let videoDuration = 300; // Default 5 menit
+                                // Dynamic video tracking
+                                let videoDuration = 0;
                                 let currentTime = 0;
                                 let videoWatched = false;
+                                let isYouTube = <?= ($video_source === 'youtube') ? 'true' : 'false' ?>;
+                                let isGDrive = <?= ($video_source === 'gdrive') ? 'true' : 'false' ?>;
                                 
-                                // Simulasi progress tracking
-                                function startProgressTracking() {
+                                // YouTube IFrame API
+                                if (isYouTube) {
+                                    // Load YouTube API
+                                    var tag = document.createElement('script');
+                                    tag.src = "https://www.youtube.com/iframe_api";
+                                    var firstScriptTag = document.getElementsByTagName('script')[0];
+                                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                                    
+                                    var player;
+                                    window.onYouTubeIframeAPIReady = function() {
+                                        player = new YT.Player('videoPlayer', {
+                                            events: {
+                                                'onReady': function(event) {
+                                                    videoDuration = player.getDuration();
+                                                    console.log('YouTube video duration:', videoDuration);
+                                                    startDynamicTracking();
+                                                },
+                                                'onStateChange': function(event) {
+                                                    if (event.data == YT.PlayerState.ENDED) {
+                                                        videoWatched = true;
+                                                        sendProgressMilestone(100);
+                                                        markVideoAsCompleted();
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    };
+                                } else {
+                                    // Google Drive: simulated tracking (no API available)
+                                    videoDuration = 300; // Default 5 min
+                                    startDynamicTracking();
+                                }
+                                
+                                function startDynamicTracking() {
                                     const interval = setInterval(() => {
-                                        currentTime += 1;
-                                        const progress = Math.min((currentTime / videoDuration) * 100, 100);
+                                        if (isYouTube && player && player.getCurrentTime) {
+                                            currentTime = player.getCurrentTime();
+                                            videoDuration = player.getDuration() || videoDuration;
+                                        } else {
+                                            currentTime += 1;
+                                        }
+                                        
+                                        const progress = videoDuration > 0 ? Math.min((currentTime / videoDuration) * 100, 100) : 0;
                                         
                                         // Update progress bar
                                         const progressBar = document.getElementById('progressBar');
@@ -290,9 +331,9 @@
                                         
                                         // Update time display
                                         const currentMinutes = Math.floor(currentTime / 60);
-                                        const currentSeconds = currentTime % 60;
+                                        const currentSeconds = Math.floor(currentTime % 60);
                                         const durationMinutes = Math.floor(videoDuration / 60);
-                                        const durationSeconds = videoDuration % 60;
+                                        const durationSeconds = Math.floor(videoDuration % 60);
                                         
                                         const videoTime = document.getElementById('videoTime');
                                         if (videoTime) {
@@ -303,11 +344,10 @@
                                         // Send progress at milestones: 25%, 50%, 75%, 100%
                                         sendProgressMilestone(Math.floor(progress));
                                         
-                                        // Auto-mark as complete jika 80% atau lebih
-                                        if (progress >= 80 && !videoWatched) {
+                                        // Auto-mark as complete jika 80% atau lebih (YouTube)
+                                        if (isYouTube && progress >= 80 && !videoWatched) {
                                             videoWatched = true;
                                             clearInterval(interval);
-                                            // Auto-mark setelah delay
                                             setTimeout(() => markVideoAsCompleted(), 1000);
                                         }
                                         
@@ -360,7 +400,10 @@
                                 
                                 // Mulai tracking saat halaman dimuat
                                 document.addEventListener('DOMContentLoaded', function() {
-                                    startProgressTracking();
+                                    // Only start if not YouTube (YouTube starts after API ready)
+                                    if (!isYouTube) {
+                                        startDynamicTracking();
+                                    }
                                 });
                                 
                                 function markVideoAsCompleted() {
@@ -615,6 +658,13 @@
                                         <div style="background: #e9ecef; border-radius: 0.25rem; height: 8px; margin-bottom: 0.5rem;">
                                             <div id="readingProgressBar" style="background: #007bff; height: 100%; width: 0%; border-radius: 0.25rem; transition: width 0.3s;"></div>
                                         </div>
+                                        <!-- Milestone indicators -->
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.7rem; color: #999;">
+                                            <span id="rms25" style="opacity:0.4;">25%</span>
+                                            <span id="rms50" style="opacity:0.4;">50%</span>
+                                            <span id="rms75" style="opacity:0.4;">75%</span>
+                                            <span id="rms100" style="opacity:0.4;">100%</span>
+                                        </div>
                                         <small style="color: #6c757d;">Waktu membaca: <span id="readingDuration">0</span> menit</small>
                                     </div>
                                     
@@ -690,6 +740,13 @@
                                     
                                     if (milestone > 0) {
                                         lastReadingMilestone = milestone;
+                                        // Update milestone indicator
+                                        var msEl = document.getElementById('rms' + milestone);
+                                        if (msEl) {
+                                            msEl.style.opacity = '1';
+                                            msEl.style.fontWeight = 'bold';
+                                            msEl.style.color = '#28a745';
+                                        }
                                         fetch('<?= base_url('home_siswa/update_progres') ?>', {
                                             method: 'POST',
                                             headers: {
