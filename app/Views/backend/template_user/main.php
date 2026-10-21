@@ -25,6 +25,14 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="<?= base_url('/icon/i.png') ?>">
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="<?= base_url('/manifest.json') ?>">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LPK LMS">
+    <link rel="apple-touch-icon" href="<?= base_url('/assets/img/icon-192.png') ?>">
+
     <!-- HTML5 Shim and Respond.js IE8 support -->
     <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -1094,6 +1102,17 @@
                 $('#logoutModal').modal('show');
             });
         });
+    </script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('<?= base_url('/sw.js') ?>')
+                    .then(reg => console.log('[PWA] SW registered:', reg.scope))
+                    .catch(err => console.log('[PWA] SW registration failed:', err));
+            });
+        }
     </script>
 
     <!-- ========================================== -->

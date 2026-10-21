@@ -286,4 +286,66 @@ class M_quiz extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getEssayQuizResults($id_quiz)
+    {
+        return $this->db->table('quiz_hasil')
+            ->select('quiz_hasil.*, siswa.nama_lengkap')
+            ->join('pendaftaran', 'pendaftaran.id_pendaftaran = quiz_hasil.id_pendaftaran')
+            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa')
+            ->where('quiz_hasil.id_quiz', $id_quiz)
+            ->where('quiz_hasil.jawaban_json !=', '[]')
+            ->where('quiz_hasil.nilai_manual IS NULL')
+            ->orderBy('quiz_hasil.created_at', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function gradeEssay($id_quiz_hasil, $nilai, $feedback)
+    {
+        return $this->update($id_quiz_hasil, [
+            'nilai_manual' => $nilai,
+            'feedback' => $feedback,
+            'is_lulus' => ($nilai >= ($this->find($id_quiz_hasil)['passing_grade'] ?? 70)) ? 1 : 0,
+            'updated_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    public function getPendingEssayGrades($id_kursus = null)
+    {
+        $builder = $this->db->table('quiz_hasil qh')
+            ->select('qh.*, q.judul_quiz, q.passing_grade, s.nama_lengkap as nama_siswa, k.nama_kursus')
+            ->join('quiz q', 'q.id_quiz = qh.id_quiz', 'left')
+            ->join('pendaftaran p', 'p.id_pendaftaran = qh.id_pendaftaran', 'left')
+            ->join('siswa s', 's.id_siswa = p.id_siswa', 'left')
+            ->join('kursus k', 'k.id_kursus = q.id_kursus', 'left');
+
+        if ($id_kursus) $builder->where('q.id_kursus', $id_kursus);
+        $builder->where('qh.jawaban_json !=', '[]')
+            ->where('qh.nilai_manual IS NULL');
+        return $builder->orderBy('qh.created_at', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getDashboardAnalytics($id_karyawan)
+    {
+        return $this->db->table('quiz q')
+            ->select('
+                q.id_quiz,
+                q.judul_quiz,
+                k.nama_kursus,
+                COUNT(qh.id_quiz_hasil) as total_attempts,
+                ROUND(AVG(qh.total_nilai), 2) as avg_score,
+                SUM(CASE WHEN qh.is_lulus = 1 THEN 1 ELSE 0 END) as passed_count,
+                SUM(CASE WHEN qh.is_lulus = 0 THEN 1 ELSE 0 END) as failed_count,
+                SUM(CASE WHEN qh.nilai_manual IS NOT NULL AND qh.jawaban_json != "[]" THEN 1 ELSE 0 END) as pending_essay
+            ')
+            ->join('kursus k', 'k.id_kursus = q.id_kursus', 'left')
+            ->join('quiz_hasil qh', 'qh.id_quiz = q.id_quiz', 'left')
+            ->where('k.id_karyawan', $id_karyawan)
+            ->groupBy('q.id_quiz')
+            ->get()
+            ->getResultArray();
+    }
 }

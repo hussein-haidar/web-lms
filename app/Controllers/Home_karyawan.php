@@ -1391,8 +1391,48 @@ class Home_karyawan extends BaseController
                 'content' => $kursus['deskripsi_kursus'] ?? ''
             ]);
         }
-
         return $this->response->setJSON(['status' => 'error']);
+    }
+
+    public function auto_generate_certificates()
+    {
+        $M_sertifikat = new \App\Models\M_sertifikat();
+        $result = $M_sertifikat->autoGeneratePendingCertificates();
+        session()->setFlashdata('pesan', 'Sertifikat otomatis dibuat: ' . $result['generated'] . ' dari ' . $result['total_pending'] . ' pending.');
+        return redirect()->to(base_url('home_karyawan/sertifikat'));
+    }
+
+    public function dashboard_analytics()
+    {
+        $id_karyawan = session()->get('id_karyawan');
+        $M_quiz = new \App\Models\M_quiz();
+        $analytics = $M_quiz->getDashboardAnalytics($id_karyawan);
+        $data = [
+            'title' => 'Analytics Dashboard',
+            'title2' => 'Analytics Dashboard',
+            'analytics' => $analytics
+        ];
+        return view('backend/karyawan/v_dashboard_analytics', $data);
+    }
+
+    public function get_tugas_deadline()
+    {
+        $id_karyawan = session()->get('id_karyawan');
+        $db = \Config\Database::connect();
+        $deadlines = $db->table('tugas')
+            ->select('tugas.*, kursus.nama_kursus')
+            ->join('kursus', 'kursus.id_kursus = tugas.id_kursus', 'left')
+            ->where('tugas.tanggal_deadline IS NOT NULL')
+            ->where('tugas.tanggal_deadline !=', '0000-00-00 00:00:00')
+            ->orderBy('tugas.tanggal_deadline', 'ASC')
+            ->get()
+            ->getResultArray();
+        $data = [
+            'title' => 'Deadline Tugas',
+            'title2' => 'Deadline Tugas',
+            'deadlines' => $deadlines
+        ];
+        return view('backend/karyawan/v_deadline_tugas', $data);
     }
 
 }

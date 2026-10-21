@@ -145,45 +145,55 @@
                     </div>
                     <div style="padding: 1.5rem;">
                         <!-- Video Content -->
-                        <?php if ($materi_aktif['tipe_materi'] == 'youtube'): ?>
+                        <?php if ($materi_aktif['tipe_materi'] == 'youtube' || $materi_aktif['tipe_materi'] == 'video'): ?>
                             <?php 
-                            // Extract YouTube video ID from url_youtube field
-                            $youtube_url = trim($materi_aktif['url_youtube'] ?? '');
+                            // Detect video source (YouTube or Google Drive)
+                            $video_url = trim($materi_aktif['url_youtube'] ?? '');
                             $video_id = '';
+                            $video_source = ''; // 'youtube' or 'gdrive'
+                            $embed_url = '';
                             
-                            // Enhanced URL parsing with regex for better accuracy
-                            if (!empty($youtube_url)) {
-                                // Pattern 1: youtube.com/watch?v=VIDEO_ID
-                                if (preg_match('/youtube\.com\/watch\?v=([^&\?#]+)/', $youtube_url, $matches)) {
+                            // Detect Google Drive
+                            if (preg_match('/drive\.google\.com/', $video_url)) {
+                                $video_source = 'gdrive';
+                                // Extract file ID from various Google Drive URL formats
+                                if (preg_match('/\/file\/d\/([a-zA-Z0-9_-]+)/', $video_url, $matches)) {
                                     $video_id = $matches[1];
-                                }
-                                // Pattern 2: youtu.be/VIDEO_ID
-                                elseif (preg_match('/youtu\.be\/([^&\?#]+)/', $youtube_url, $matches)) {
+                                } elseif (preg_match('/id=([a-zA-Z0-9_-]+)/', $video_url, $matches)) {
                                     $video_id = $matches[1];
+                                } elseif (preg_match('/^([a-zA-Z0-9_-]{25,})$/', $video_url)) {
+                                    $video_id = $video_url;
                                 }
-                                // Pattern 3: youtube.com/embed/VIDEO_ID
-                                elseif (preg_match('/youtube\.com\/embed\/([^&\?#]+)/', $youtube_url, $matches)) {
-                                    $video_id = $matches[1];
-                                }
-                                // Pattern 4: Just the video ID (fallback)
-                                elseif (preg_match('/^[a-zA-Z0-9_-]{11}$/', $youtube_url)) {
-                                    $video_id = $youtube_url;
+                                if ($video_id) {
+                                    $embed_url = "https://drive.google.com/file/d/{$video_id}/preview";
                                 }
                             }
-                            
-                            // Clean video ID (remove any remaining query parameters)
-                            if ($video_id) {
-                                $video_id = explode('&', $video_id)[0];
-                                $video_id = explode('#', $video_id)[0];
+                            // Detect YouTube
+                            else {
+                                $video_source = 'youtube';
+                                if (preg_match('/youtube\.com\/watch\?v=([^&\?#]+)/', $video_url, $matches)) {
+                                    $video_id = $matches[1];
+                                } elseif (preg_match('/youtu\.be\/([^&\?#]+)/', $video_url, $matches)) {
+                                    $video_id = $matches[1];
+                                } elseif (preg_match('/youtube\.com\/embed\/([^&\?#]+)/', $video_url, $matches)) {
+                                    $video_id = $matches[1];
+                                } elseif (preg_match('/^[a-zA-Z0-9_-]{11}$/', $video_url)) {
+                                    $video_id = $video_url;
+                                }
+                                if ($video_id) {
+                                    $video_id = explode('&', $video_id)[0];
+                                    $video_id = explode('#', $video_id)[0];
+                                    $embed_url = "https://www.youtube.com/embed/{$video_id}?rel=0&showinfo=0&controls=1&modestbranding=1";
+                                }
                             }
                             ?>
                             
-                            <?php if (!empty($video_id) && strlen($video_id) === 11): ?>
+                            <?php if (!empty($embed_url)): ?>
                                 <!-- Video YouTube Valid -->
                                 <div class="video-container">
                                     <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 0.5rem; background: #000;">
                                         <iframe 
-                                            src="https://www.youtube.com/embed/<?= $video_id ?>?rel=0&showinfo=0&controls=1&modestbranding=1" 
+                                            src="<?= $embed_url ?>" 
                                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
                                             frameborder="0"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

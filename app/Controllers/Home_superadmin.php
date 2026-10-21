@@ -3456,4 +3456,12 @@ class Home_superadmin extends BaseController
         ];
         return view('backend/superadmin/v_gradebook_detail', $data);
     }
+
+    public function auto_generate_certificates()
+    {
+        $M_sertifikat = new \App\Models\M_sertifikat();
+        $result = $M_sertifikat->autoGeneratePendingCertificates();
+        session()->setFlashdata('pesan', 'Sertifikat otomatis dibuat: ' . $result['generated'] . ' dari ' . $result['total_pending'] . ' pending.');
+        return redirect()->to(base_url('home_superadmin/sertifikat'));
+    }
 }

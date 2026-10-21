@@ -14,9 +14,32 @@
 if (!function_exists('email_notifikasi')) {
     /**
      * Kirim email notifikasi umum
+     * Mode: 'smtp' (default) atau 'log' (hanya log ke file, tanpa kirim SMTP)
+     * Set EMAIL_MODE=log di .env untuk mode log-only
      */
     function email_notifikasi($to, $subject, $message, $fromEmail = null, $fromName = null)
     {
+        $mode = env('EMAIL_MODE', 'smtp'); // 'smtp' atau 'log'
+        
+        if ($mode === 'log') {
+            // Log-only mode: simpan ke log file, JANGAN kirim via SMTP
+            $logMsg = "=== EMAIL LOG-ONLY ===\n";
+            $logMsg .= "To: {$to}\n";
+            $logMsg .= "Subject: {$subject}\n";
+            $logMsg .= "From: " . ($fromEmail ?? env('SMTP_FROM', 'admin@lpkinasaba.com')) . "\n";
+            $logMsg .= "Message (HTML):\n{$message}\n";
+            $logMsg .= "=== END EMAIL ===\n";
+            
+            log_message('info', $logMsg);
+            
+            // Simpan juga ke file terpisah untuk debugging
+            $logFile = WRITEPATH . 'logs/emails-' . date('Y-m-d') . '.log';
+            file_put_contents($logFile, date('[Y-m-d H:i:s] ') . $logMsg . "\n", FILE_APPEND);
+            
+            return true;
+        }
+        
+        // Normal SMTP mode
         $config = [
             'SMTPHost'  => env('SMTP_HOST', 'smtp.gmail.com'),
             'SMTPPort'  => env('SMTP_PORT', 587),
@@ -168,10 +191,91 @@ if (!function_exists('email_hasil_quiz')) {
                     <tr style='background:#f9f9f9;'><td style='padding:8px; border:1px solid #ddd;'><strong>Passing Grade</strong></td><td style='padding:8px; border:1px solid #ddd;'>{$quiz['passing_grade']}%</td></tr>
                     <tr><td style='padding:8px; border:1px solid #ddd;'><strong>Status</strong></td><td style='padding:8px; border:1px solid #ddd;'><span style='color:{$color}; font-weight:bold;'>{$status}</span></td></tr>
                 </table>
-                <a href='" . base_url('home_siswa/belajar/' . $hasil['id_pendaftaran']) . "' style='display:inline-block; background:#007bff; color:white; padding:10px 25px; text-decoration:none; border-radius:5px;'>Kembali ke Kursus</a>
+</div>";
+
+        return email_notifikasi($siswa['email'], $subject, $message);
+    }
+}
+
+if (!function_exists('email_quiz_auto_timeout')) {
+    function email_quiz_auto_timeout($siswa, $quiz, $hasil)
+    {
+        $subject = 'Waktu Quiz Habis - LPK INASABA';
+        $message = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+            <div style='background: #fd7e14; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;'>
+                <h2 style='margin:0;'>Waktu Quiz Habis</h2>
+            </div>
+            <div style='padding: 20px; border: 1px solid #ddd; border-top: none;'>
+                <p>Hai <strong>{$siswa['nama_lengkap']}</strong>,</p>
+                <p>Waktu quiz <strong>{$quiz['judul_quiz']}</strong> telah habis dan quiz di-submit otomatis.</p>
+                <table style='width:100%; border-collapse: collapse; margin: 15px 0;'>
+                    <tr style='background:#f9f9f9;'><td style='padding:8px; border:1px solid #ddd;'><strong>Nilai</strong></td><td style='padding:8px; border:1px solid #ddd;'>" . round($hasil['total_nilai'], 1) . "%</td></tr>
+                    <tr><td style='padding:8px; border:1px solid #ddd;'><strong>Status</strong></td><td style='padding:8px; border:1px solid #ddd;'><span style='color:" . ($hasil['is_lulus'] ? '#28a745' : '#dc3545') . "; font-weight:bold;'>" . ($hasil['is_lulus'] ? 'LULUS' : 'TIDAK LULUS') . "</span></td></tr>
+                </table>
+                <a href='" . base_url('home_siswa/hasil/' . $quiz['id_quiz']) . "' style='display:inline-block; background:#fd7e14; color:white; padding:10px 25px; text-decoration:none; border-radius:5px;'>Lihat Hasil</a>
             </div>
         </div>";
+        return email_notifikasi($siswa['email'], $subject, $message);
+    }
+}
 
+if (!function_exists('email_deadline_reminder')) {
+    function email_deadline_reminder($siswa, $tugas, $sisa_hari)
+    {
+        $subject = 'Pengingat Deadline Tugas - LPK INASABA';
+        $message = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+            <div style='background: #dc3545; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;'>
+                <h2 style='margin:0;'>⏰ Deadline Mendekat!</h2>
+            </div>
+            <div style='padding: 20px; border: 1px solid #ddd; border-top: none;'>
+                <p>Hai <strong>{$siswa['nama_lengkap']}</strong>,</p>
+                <p>Tugas <strong>{$tugas['judul_tugas']}</strong> akan berakhir dalam <strong>{$sisa_hari} hari</strong>.</p>
+                <p><strong>Kursus:</strong> {$tugas['nama_kursus']}</p>
+                <a href='" . base_url('home_siswa/kumpul_tugas') . "' style='display:inline-block; background:#dc3545; color:white; padding:10px 25px; text-decoration:none; border-radius:5px;'>Kumpul Sekarang</a>
+            </div>
+        </div>";
+        return email_notifikasi($siswa['email'], $subject, $message);
+    }
+}
+
+if (!function_exists('email_certificate_ready')) {
+    function email_certificate_ready($siswa, $sertifikat)
+    {
+        $subject = 'Sertifikat Tersedia - LPK INASABA';
+        $message = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+            <div style='background: #28a745; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;'>
+                <h2 style='margin:0;'>🎓 Sertifikat Tersedia!</h2>
+            </div>
+            <div style='padding: 20px; border: 1px solid #ddd; border-top: none;'>
+                <p>Hai <strong>{$siswa['nama_lengkap']}</strong>,</p>
+                <p>Selamat! Sertifikat kursus <strong>{$sertifikat['nama_kursus']}</strong> sudah tersedia.</p>
+                <p><strong>Nomor:</strong> {$sertifikat['nomor_sertifikat']}</p>
+                <a href='" . base_url('sertifikat/print/' . $sertifikat['id_sertifikat']) . "' style='display:inline-block; background:#28a745; color:white; padding:10px 25px; text-decoration:none; border-radius:5px;'>Lihat & Cetak Sertifikat</a>
+            </div>
+        </div>";
+        return email_notifikasi($siswa['email'], $subject, $message);
+    }
+}
+
+if (!function_exists('email_notif_new')) {
+    function email_notif_new($siswa, $judul, $pesan)
+    {
+        $subject = 'Notifikasi Baru - LPK INASABA';
+        $message = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+            <div style='background: #17a2b8; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0;'>
+                <h2 style='margin:0;'>🔔 Notifikasi Baru</h2>
+            </div>
+            <div style='padding: 20px; border: 1px solid #ddd; border-top: none;'>
+                <p>Hai <strong>{$siswa['nama_lengkap']}</strong>,</p>
+                <p><strong>{$judul}</strong></p>
+                <p>{$pesan}</p>
+                <a href='" . base_url('home_siswa/notifikasi') . "' style='display:inline-block; background:#17a2b8; color:white; padding:10px 25px; text-decoration:none; border-radius:5px;'>Lihat Notifikasi</a>
+            </div>
+        </div>";
         return email_notifikasi($siswa['email'], $subject, $message);
     }
 }

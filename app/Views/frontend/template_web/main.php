@@ -15,6 +15,14 @@
     <!-- Format ICO (paling kompatibel) -->
     <link rel="icon" type="image/x-icon" href="<?= base_url('/icon/i.png') ?>">
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="<?= base_url('/manifest.json') ?>">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LPK LMS">
+    <link rel="apple-touch-icon" href="<?= base_url('/assets/img/icon-192.png') ?>">
+
 </head>
 
 <body class="d-flex flex-column min-vh-100">
@@ -587,6 +595,17 @@
                 });
             }
         });
+    </script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('<?= base_url('/sw.js') ?>')
+                    .then(reg => console.log('[PWA] SW registered:', reg.scope))
+                    .catch(err => console.log('[PWA] SW registration failed:', err));
+            });
+        }
     </script>
 
 </body>

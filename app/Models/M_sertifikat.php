@@ -286,37 +286,86 @@ class M_sertifikat extends Model
     {
         $sertifikat = $this->find($id_sertifikat);
         if (!$sertifikat) return false;
-        
-        // Ambil data terbaru dari pendaftaran
         $pendaftaran = $this->db->table('pendaftaran')
             ->where('id_pendaftaran', $sertifikat['id_pendaftaran'])
             ->get()
             ->getRowArray();
-        
         if (!$pendaftaran) return false;
-        
         $updateData = [];
-        
-        // Sync nilai_akhir
         if ($pendaftaran['nilai_akhir'] > 0) {
             $updateData['nilai_akhir'] = $pendaftaran['nilai_akhir'];
             $updateData['predikat'] = $this->getPredikat($pendaftaran['nilai_akhir']);
         }
-        
-        // Sync tanggal_selesai
         if ($pendaftaran['tanggal_selesai']) {
             $updateData['tanggal_selesai'] = $pendaftaran['tanggal_selesai'];
         }
-        
-        // Sync nama jika berubah
         if ($pendaftaran['nama_lengkap'] !== $sertifikat['nama_peserta']) {
             $updateData['nama_peserta'] = $pendaftaran['nama_lengkap'];
         }
-        
         if (!empty($updateData)) {
             return $this->update($id_sertifikat, $updateData);
         }
-        
         return true;
+    }
+
+    public function autoGeneratePendingCertificates()
+    {
+        $pending = $this->getPendingSertifikat();
+        $generated = 0;
+        foreach ($pending as $item) {
+            if ($item['nilai_akhir'] > 0 && $item['progress'] >= 100) {
+                $result = $this->createFromPendaftaran($item['id_pendaftaran']);
+                if ($result) $generated++;
+            }
+        }
+        return ['generated' => $generated, 'total_pending' => count($pending)];
+    }
+
+    public function generateCertificateForPendaftaran($id_pendaftaran)
+    {
+        $pendaftaran = $this->db->table('pendaftaran')
+            ->select('pendaftaran.*, kursus.nama_kursus, kursus.slug, siswa.nama_lengkap, siswa.email')
+            ->join('kursus', 'kursus.id_kursus = pendaftaran.id_kursus')
+            ->join('siswa', 'siswa.id_siswa = pendaftaran.id_siswa')
+            ->where('pendaftaran.id_pendaftaran', $id_pendaftaran)
+            ->get()
+            ->getRowArray();
+
+        if (!$pendaftaran || $pendaftaran['progress'] < 100) return false;
+
+        $nilai = $pendaftaran['nilai_akhir'] ?? 0;
+        if ($nilai <= 0) return false;
+
+        $predikat = $this->getPredikat($nilai);
+        $nomor_sertifikat = $this->generateNomor($pendaftaran['id_kursus']);
+        $qr_code = 'qr_' . str_replace(['/', '-'], '_', $nomor_sertifikat);
+        $verification_url = base_url('sertifikat/verify/' . $nomor_sertifikat);
+
+        $data = [
+            'id_pendaftaran' => $pendaftaran['id_pendaftaran'],
+            'id_kursus' => $pendaftaran['id_kursus'],
+            'id_siswa' => $pendaftaran['id_siswa'],
+            'nomor_sertifikat' => $nomor_sertifikat,
+            'qr_code' => $qr_code,
+            'verification_url' => $verification_url,
+            'nama_peserta' => $pendaftaran['nama_lengkap'],
+            'nama_kursus' => $pendaftaran['nama_kursus'],
+            'nama_paket' => $pendaftaran['nama_paket'] ?? 'Standard',
+            'nilai_akhir' => $nilai,
+            'predikat' => $predikat,
+            'tanggal_mulai' => date('Y-m-d', strtotime($pendaftaran['tanggal_aktif'] ?? $pendaftaran['tanggal_pendaftaran'])),
+            'tanggal_selesai' => date('Y-m-d'),
+            'tanggal_terbit' => date('Y-m-d H:i:s'),
+            'is_active' => 1,
+            'is_verified' => 1,
+            'issued_by' => session()->get('id_karyawan') ?? 0,
+            'notes' => 'Sertifikat diterbitkan otomatis setelah penyelesaian kursus'
+        ];
+
+        $id_sertifikat = $this->insert($data);
+        $this->db->table('pendaftaran')
+            ->where('id_pendaftaran', $id_pendaftaran)
+            ->update(['sertifikat_dikirim' => 1, 'tanggal_sertifikat' => date('Y-m-d H:i:s')]);
+        return $this->find($id_sertifikat);
     }
 }

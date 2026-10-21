@@ -249,6 +249,12 @@ $routes->group(
         // --- GRADEBOOK ---
         $routes->get('gradebook', 'Home_superadmin::gradebook');
         $routes->get('gradebook/(:num)', 'Home_superadmin::gradebook_detail/$1');
+
+        // --- BACKUP ---
+        $routes->get('backup', 'BackupController::index');
+        $routes->post('backup/create', 'BackupController::create');
+        $routes->get('backup/download/(:segment)', 'BackupController::download/$1');
+        $routes->post('backup/delete/(:segment)', 'BackupController::delete/$1');
     }
 );
 
@@ -539,6 +545,25 @@ $routes->group('home_siswa/notifikasi', ['namespace' => 'App\Controllers', 'filt
     $routes->get('/', 'Home_siswa::notifikasi');
     $routes->get('mark-read/(:num)', 'Home_siswa::mark_read/$1');
     $routes->post('mark-all-read', 'Home_siswa::mark_all_read');
+    $routes->get('ajax', 'Home_siswa::ajax_get_notifications');
+    $routes->get('count', 'Home_siswa::ajax_notif_count');
+    $routes->post('load-more', 'Home_siswa::ajax_load_notifikasi');
+});
+
+// ✅ Auto-generate certificates (Superadmin)
+$routes->get('admin/auto-generate-certificates', 'Home_superadmin::auto_generate_certificates', ['filter' => 'filter_superadmin']);
+
+// ✅ Dashboard Analytics (Pengajar)
+$routes->get('home_karyawan/analytics', 'Home_karyawan::dashboard_analytics', ['filter' => 'filter_pengajar']);
+
+// ✅ Deadline Tugas (Pengajar)
+$routes->get('home_karyawan/deadline-tugas', 'Home_karyawan::get_tugas_deadline', ['filter' => 'filter_pengajar']);
+
+// ✅ Learning Path (Siswa)
+$routes->group('home_siswa/learning-path', ['namespace' => 'App\Controllers', 'filter' => 'filter_siswa'], function ($routes) {
+    $routes->get('/', 'Home_siswa::learning_path');
+    $routes->get('modul/(:num)', 'Home_siswa::learning_path_modul/$1');
+    $routes->get('next', 'Home_siswa::learning_path_next');
 });
 
 $routes->group('api/siswa', ['namespace' => 'App\Controllers', 'filter' => 'filter_siswa'], function ($routes) {
@@ -558,6 +583,16 @@ $routes->group('api/siswa', ['namespace' => 'App\Controllers\Siswa', 'filter' =>
     $routes->get('chat/unread', 'ChatSiswa::ajax_unread_count');
     $routes->get('chat/messages/(:num)', 'ChatSiswa::ajax_messages/$1');
     $routes->post('chat/send', 'ChatSiswa::send');
+    $routes->post('chat/delete/(:num)', 'ChatSiswa::delete_message/$1');
+    $routes->post('chat/edit/(:num)', 'ChatSiswa::edit_message/$1');
+    $routes->get('chat/search', 'ChatSiswa::search_messages');
+    $routes->post('chat/pin/(:num)', 'ChatSiswa::pin_message/$1');
+    $routes->post('chat/react/(:num)', 'ChatSiswa::react_message/$1');
+    $routes->post('chat/typing', 'ChatSiswa::typing_indicator');
+    $routes->get('chat/typing/(:num)', 'ChatSiswa::check_typing/$1');
+    $routes->get('chat/export/(:num)', 'ChatSiswa::export_chat/$1');
+    $routes->post('chat/online', 'ChatSiswa::update_last_activity');
+    $routes->get('chat/online/(:num)', 'ChatSiswa::check_online_status/$1');
 });
 
 // Midtrans webhook (no session filter)
@@ -571,6 +606,23 @@ $routes->group('home_siswa/chat', ['namespace' => 'App\Controllers\Siswa', 'filt
     $routes->get('(:num)', 'ChatSiswa::conversation/$1');
     $routes->get('(:num)/(:segment)', 'ChatSiswa::conversation/$1/$2');
     $routes->post('send', 'ChatSiswa::send');
+    $routes->post('delete/(:num)', 'ChatSiswa::delete_message/$1');
+    $routes->post('edit/(:num)', 'ChatSiswa::edit_message/$1');
+    $routes->get('search', 'ChatSiswa::search_messages');
+    $routes->post('pin/(:num)', 'ChatSiswa::pin_message/$1');
+    $routes->post('react/(:num)', 'ChatSiswa::react_message/$1');
+    $routes->post('typing', 'ChatSiswa::typing_indicator');
+    $routes->get('typing/(:num)', 'ChatSiswa::check_typing/$1');
+    $routes->get('export/(:num)', 'ChatSiswa::export_chat/$1');
+    $routes->post('online', 'ChatSiswa::update_last_activity');
+    $routes->get('online/(:num)', 'ChatSiswa::check_online_status/$1');
+    $routes->get('sse/(:num)', 'ChatSiswa::sse_chat/$1');
+    $routes->get('groups', 'ChatSiswa::groups');
+    $routes->post('groups/create', 'ChatSiswa::create_group');
+    $routes->get('groups/(:num)', 'ChatSiswa::group_conversation/$1');
+    $routes->post('groups/send', 'ChatSiswa::send_group_message');
+    $routes->get('groups/sse/(:num)', 'ChatSiswa::sse_group/$1');
+    $routes->get('groups/ajax/(:num)', 'ChatSiswa::ajax_group_messages/$1');
 });
 
 // ============================================================================

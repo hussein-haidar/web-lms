@@ -51,12 +51,22 @@
                                 <select name="tipe_materi" class="form-control" id="tipe_materi" required>
                                     <option value="">-- Pilih Tipe --</option>
                                     <option value="youtube" <?= old('tipe_materi', $materi['tipe_materi']) == 'youtube' ? 'selected' : '' ?>>YouTube Video</option>
+                                    <option value="video" <?= old('tipe_materi', $materi['tipe_materi']) == 'video' ? 'selected' : '' ?>>Video (YouTube/Google Drive)</option>
                                     <option value="zoom" <?= old('tipe_materi', $materi['tipe_materi']) == 'zoom' ? 'selected' : '' ?>>Zoom Meeting</option>
                                     <option value="quiz" <?= old('tipe_materi', $materi['tipe_materi']) == 'quiz' ? 'selected' : '' ?>>Quiz</option>
                                     <option value="text" <?= old('tipe_materi', $materi['tipe_materi']) == 'text' ? 'selected' : '' ?>>Text Content</option>
                                 </select>
                             </div>
 
+
+<!-- YouTube/Video Fields -->
+                            <div id="youtubeFields" class="tipe-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label>URL YouTube / Google Drive <span class="text-danger">*</span></label>
+                                    <input type="url" name="url_youtube" class="form-control" value="<?= old('url_youtube', $materi['url_youtube'] ?? '') ?>" placeholder="https://www.youtube.com/watch?v=... atau https://drive.google.com/file/d/.../view">
+                                    <small class="text-muted">Paste URL YouTube atau Google Drive. Sistem akan otomatis mendeteksi sumber video.</small>
+                                </div>
+                            </div>
 
                             <!-- Zoom Fields -->
                             <div id="zoomFields" class="tipe-fields" style="display: none;">
@@ -177,7 +187,8 @@
         // Show selected tipe field
         var selectedValue = this.value;
         if (selectedValue) {
-            var fieldId = selectedValue + 'Fields';
+            // Map 'youtube' and 'video' to 'youtubeFields'
+            var fieldId = (selectedValue === 'youtube' || selectedValue === 'video') ? 'youtubeFields' : (selectedValue + 'Fields');
             var field = document.getElementById(fieldId);
             if (field) {
                 field.style.display = 'block';

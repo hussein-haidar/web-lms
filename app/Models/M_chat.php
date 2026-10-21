@@ -20,3 +20,4 @@ class M_chat extends Model
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
     protected $returnType = 'array';
+}

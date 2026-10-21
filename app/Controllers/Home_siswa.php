@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\M_siswa;
+use App\Models\M_notifikasi;
 use App\Models\M_kursus;
 use App\Models\M_tugas;
 use App\Models\M_pengumpulan;
@@ -44,6 +45,7 @@ class Home_siswa extends BaseController
     protected $M_pembayaran;
     protected $M_alumni;
     protected $M_saran;
+    protected $M_notifikasi;
     protected $db;
 
     public function __construct()
@@ -69,6 +71,7 @@ class Home_siswa extends BaseController
         $this->M_pembayaran = new M_pembayaran();
         $this->M_alumni = new M_alumni();
         $this->M_saran = new M_saran();
+        $this->M_notifikasi = new M_notifikasi();
         $this->db = \Config\Database::connect();
     }
 
@@ -107,6 +110,7 @@ class Home_siswa extends BaseController
             'enrolled' => $enrolled,
             'recommendations' => $recommendations,
             'reviewed_ids' => $reviewed_ids,
+            'unread_count' => $this->M_notifikasi->getUnreadCount($id_siswa, 'siswa'),
         ];
         return view('backend/siswa/v_home_siswa', $data);
     }
@@ -774,6 +778,94 @@ class Home_siswa extends BaseController
     {
         session()->set('last_payment_status_check', date('Y-m-d H:i:s', strtotime('-5 minutes')));
         return $this->response->setJSON(['status' => 'ok', 'message' => 'Tracking reset']);
+    }
+
+    /**
+     * Halaman Notifikasi
+     */
+    public function notifikasi()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return redirect()->to(base_url('auth_login/login_siswa'));
+        }
+
+        $notifikasi = $this->M_notifikasi->getByUser($id_siswa, 'siswa');
+        $unread_count = $this->M_notifikasi->getUnreadCount($id_siswa, 'siswa');
+
+        $data = [
+            'title'  => 'Notifikasi',
+            'title2' => 'Notifikasi',
+            'notifikasi' => $notifikasi,
+            'unread_count' => $unread_count,
+        ];
+        return view('backend/siswa/v_notifikasi', $data);
+    }
+
+    /**
+     * Mark single notification as read
+     */
+    public function mark_read($id_notifikasi)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+        $this->M_notifikasi->markAsRead($id_notifikasi);
+        return $this->response->setJSON(['status' => 'success']);
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function mark_all_read()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+        $this->M_notifikasi->markAllAsRead($id_siswa, 'siswa');
+        return $this->response->setJSON(['status' => 'success', 'message' => 'Semua notifikasi dibaca']);
+    }
+
+    /**
+     * AJAX: Get unread notification count
+     */
+    public function ajax_notif_count()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['count' => 0]);
+        }
+        $count = $this->M_notifikasi->getUnreadCount($id_siswa, 'siswa');
+        return $this->response->setJSON(['count' => $count]);
+    }
+
+    /**
+     * AJAX: Load more notifications
+     */
+    public function ajax_load_notifikasi()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['status' => 'error']);
+        }
+        $offset = $this->request->getPost('offset') ?? 0;
+        $notifikasi = $this->M_notifikasi->getByUser($id_siswa, 'siswa', 10, $offset);
+        return $this->response->setJSON(['status' => 'success', 'notifikasi' => $notifikasi]);
+    }
+
+    /**
+     * AJAX: Get notifications for sidebar
+     */
+    public function ajax_get_notifications()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) {
+            return $this->response->setJSON(['notifications' => []]);
+        }
+        $notifications = $this->M_notifikasi->getByUser($id_siswa, 'siswa', 10);
+        return $this->response->setJSON(['status' => 'success', 'notifications' => $notifications]);
     }
 
     public function riwayat_beli()
@@ -1906,51 +1998,6 @@ class Home_siswa extends BaseController
         return view('backend/siswa/pendaftaran/v_riwayat', $data);
     }
 
-    public function notifikasi()
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) {
-            session()->setFlashdata('error', 'Anda harus login terlebih dahulu!');
-            return redirect()->to(base_url('auth_login/login_siswa'));
-        }
-
-        // Ambil notifikasi dari database (contoh)
-        $notifikasi = []; // Ganti dengan query notifikasi
-
-        $data = [
-            'title' => 'Notifikasi',
-            'title2' => 'Notifikasi',
-            'notifikasi' => $notifikasi
-        ];
-        return view('backend/siswa/notifikasi/v_index', $data);
-    }
-
-    public function mark_read($id_notifikasi)
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) {
-            return redirect()->to(base_url('auth_login/login_siswa'));
-        }
-
-        // Update status notifikasi menjadi dibaca
-        // $this->notifikasiModel->update($id_notifikasi, ['is_read' => 1]);
-
-        return redirect()->to(base_url('home_siswa/notifikasi'));
-    }
-
-    public function mark_all_read()
-    {
-        $id_siswa = session()->get('id_siswa');
-        if (!$id_siswa) {
-            return redirect()->to(base_url('auth_login/login_siswa'));
-        }
-
-        // Update semua notifikasi menjadi dibaca
-        // $this->notifikasiModel->where('id_siswa', $id_siswa)->update(['is_read' => 1]);
-
-        return redirect()->to(base_url('home_siswa/notifikasi'));
-    }
-
     public function ajax_update_materi_progress($id_materi)
     {
         $id_siswa = session()->get('id_siswa');
@@ -2607,4 +2654,67 @@ class Home_siswa extends BaseController
         return redirect()->to(base_url('home_siswa'));
     }
 
+    public function learning_path()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
+        $pendaftaran = $this->M_pendaftaran->getBySiswa($id_siswa);
+        $completed_materi = [];
+        $modul_data = [];
+        foreach ($pendaftaran as $p) {
+            $progres = $this->M_progres_materi->getProgresPendaftaran($p['id_pendaftaran']);
+            foreach ($progres as $pg) {
+                if ($pg['is_completed']) $completed_materi[] = $pg['id_materi'];
+            }
+            $modul = $this->M_modul->where('id_kursus', $p['id_kursus'])->orderBy('urutan', 'ASC')->findAll();
+            foreach ($modul as $m) {
+                $materi = $this->M_materi->getByModul($m['id_modul']);
+                $cc = 0;
+                foreach ($materi as $mt) { foreach ($progres as $pg) { if ($pg['id_materi'] == $mt['id_materi'] && $pg['is_completed']) $cc++; } }
+                $modul_data[] = ['modul' => $m, 'materi' => $materi, 'completed_materi' => $cc, 'total_materi' => count($materi), 'percentage' => count($materi) > 0 ? round(($cc / count($materi)) * 100, 2) : 0];
+            }
+        }
+        $data = ['title' => 'Learning Path', 'title2' => 'Jalur Belajar', 'pendaftaran' => $pendaftaran, 'completed_materi' => $completed_materi, 'modul_data' => $modul_data, 'progres' => [], 'progress_percentage' => $this->M_progres_materi->getCompletionPercentage($pendaftaran[0]['id_pendaftaran'] ?? null)];
+        return view('backend/siswa/v_learning_path', $data);
     }
+
+    public function learning_path_modul($id_pendaftaran)
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
+        $pendaftaran = $this->M_pendaftaran->find($id_pendaftaran);
+        if (!$pendaftaran || $pendaftaran['id_siswa'] != $id_siswa) return redirect()->to(base_url('home_siswa'));
+        $modul = $this->M_modul->where('id_kursus', $pendaftaran['id_kursus'])->orderBy('urutan', 'ASC')->findAll();
+        $progres = $this->M_progres_materi->getProgresPendaftaran($id_pendaftaran);
+        $modul_data = [];
+        foreach ($modul as $m) {
+            $materi = $this->M_materi->getByModul($m['id_modul']);
+            $cc = 0;
+            foreach ($materi as $mt) { foreach ($progres as $pg) { if ($pg['id_materi'] == $mt['id_materi'] && $pg['is_completed']) $cc++; } }
+            $modul_data[] = ['modul' => $m, 'materi' => $materi, 'completed_materi' => $cc, 'total_materi' => count($materi), 'percentage' => count($materi) > 0 ? round(($cc / count($materi)) * 100, 2) : 0];
+        }
+        $data = ['title' => 'Learning Path - Modul', 'title2' => 'Jalur Belajar', 'modul_data' => $modul_data, 'pendaftaran' => $pendaftaran, 'progress_percentage' => $this->M_progres_materi->getCompletionPercentage($id_pendaftaran)];
+        return view('backend/siswa/v_learning_path_modul', $data);
+    }
+
+    public function learning_path_next()
+    {
+        $id_siswa = session()->get('id_siswa');
+        if (!$id_siswa) return redirect()->to(base_url('auth_login/login_siswa'));
+        $pendaftaran = $this->M_pendaftaran->getBySiswa($id_siswa);
+        $next_materi = null;
+        foreach ($pendaftaran as $p) {
+            $modul = $this->M_modul->where('id_kursus', $p['id_kursus'])->orderBy('urutan', 'ASC')->findAll();
+            foreach ($modul as $m) {
+                $materi = $this->M_materi->getByModul($m['id_modul']);
+                foreach ($materi as $mt) {
+                    $existing = $this->M_progres_materi->where('id_pendaftaran', $p['id_pendaftaran'])->where('id_materi', $mt['id_materi'])->first();
+                    if (!$existing || !$existing['is_completed']) { $next_materi = $mt; break 3; }
+                }
+            }
+        }
+        if ($next_materi) return redirect()->to(base_url('home_siswa/belajar/' . $pendaftaran[0]['id_pendaftaran'] . '/' . $next_materi['id_materi']));
+        session()->setFlashdata('pesan', 'Selamat! Semua materi sudah diselesaikan.');
+        return redirect()->to(base_url('home_siswa/kursus_saya'));
+    }
+}
